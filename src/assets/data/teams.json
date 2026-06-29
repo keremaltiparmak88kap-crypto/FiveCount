@@ -1,0 +1,10 @@
+[
+  {"id": "BOS", "name": "Boston Celtics", "ovr": 96, "w": 0, "l": 0},
+  {"id": "LAL", "name": "LA Lakers", "ovr": 93, "w": 0, "l": 0},
+  {"id": "GSW", "name": "Golden State Warriors", "ovr": 94, "w": 0, "l": 0},
+  {"id": "DEN", "name": "Denver Nuggets", "ovr": 95, "w": 0, "l": 0},
+  {"id": "MIL", "name": "Milwaukee Bucks", "ovr": 93, "w": 0, "l": 0},
+  {"id": "PHX", "name": "Phoenix Suns", "ovr": 94, "w": 0, "l": 0},
+  {"id": "DAL", "name": "Dallas Mavericks", "ovr": 95, "w": 0, "l": 0},
+  {"id": "MIA", "name": "Miami Heat", "ovr": 91, "w": 0, "l": 0}
+]

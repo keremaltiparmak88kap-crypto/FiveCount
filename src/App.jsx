@@ -1,0 +1,177 @@
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useGameStore } from './store';
+import { Search, Key, Brain, Clipboard, TrendingUp, Target, LayoutGrid } from 'lucide-react';
+import ManagerGame from './ManagerGame';
+import CareerGame from './CareerGame';
+import TriviaGame from './TriviaGame';
+import BingoGame from './BingoGame';
+import MissingGame from './MissingGame';
+import TeamGrid from './TeamGrid';
+import CourtCode from './CourtCode';
+
+// --- SABİT TANIMLAMALAR ---
+const DAILY_PLAYER = {
+  name: "Marcus 'The Flash' Jaxon",
+  image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=300&auto=format&fit=crop"
+};
+
+const ALL_TEAMS = {
+  LAL: { name: "LAKERS", color: "from-yellow-500 to-purple-800" },
+  GSW: { name: "WARRIORS", color: "from-blue-600 to-yellow-500" },
+  BOS: { name: "CELTICS", color: "from-green-700 to-green-900" },
+  CHI: { name: "BULLS", color: "from-red-700 to-red-900" },
+  MIA: { name: "HEAT", color: "from-red-600 to-orange-500" }
+};
+
+// --- YARDIMCI FONKSİYONLAR ---
+const playSound = (type) => {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.setValueAtTime(type === 'click' ? 400 : 880, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.2);
+  } catch (e) {}
+};
+
+const BasketballAtmosphere = () => (
+  <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+    <div className="absolute inset-0 bg-[#060608]" />
+    <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: `linear-gradient(90deg, #f97316 1px, transparent 1px), linear-gradient(#f97316 1px, transparent 1px)`, backgroundSize: '120px 120px', transform: 'perspective(500px) rotateX(60deg)', transformOrigin: 'top', marginTop: '100px' }} />
+  </div>
+);
+
+const ArenaDoor = ({ isOpen }) => (
+  <motion.div className="fixed inset-0 z-[200] flex pointer-events-none">
+    <motion.div className="w-1/2 h-full bg-[#060608] border-r-2 border-orange-500 flex items-center justify-end pr-4" animate={{ x: isOpen ? "-100%" : "0%" }} transition={{ duration: 0.8 }}><span className="text-6xl font-black italic tracking-tighter text-white">FIVE</span></motion.div>
+    <motion.div className="w-1/2 h-full bg-[#060608] border-l-2 border-orange-500 flex items-center justify-start pl-4" animate={{ x: isOpen ? "100%" : "0%" }} transition={{ duration: 0.8 }}><span className="text-6xl font-black italic tracking-tighter text-orange-500">COURT</span></motion.div>
+  </motion.div>
+);
+
+// --- ANA BİLEŞEN ---
+function App() {
+  const { username, setUsername } = useGameStore();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentGame, setCurrentGame] = useState("hub");
+  const [doorOpen, setDoorOpen] = useState(true);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleGameSelect = (gameId) => {
+    playSound('click');
+    setDoorOpen(false);
+    setTimeout(() => {
+      setCurrentGame(gameId);
+      setDoorOpen(true);
+    }, 800);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#060608] text-white relative font-sans">
+      <BasketballAtmosphere />
+      <ArenaDoor isOpen={doorOpen} />
+      
+      <div className="relative z-10 max-w-3xl mx-auto min-h-screen flex flex-col pb-10">
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <motion.div 
+              key="loader"
+              className="fixed inset-0 flex flex-col items-center justify-center bg-black z-50"
+              exit={{ opacity: 0 }}
+            >
+              <motion.div 
+                initial={{ width: 0 }} 
+                animate={{ width: 200 }} 
+                transition={{ duration: 1.5 }}
+                className="h-1 bg-orange-500"
+              />
+              <p className="mt-4 text-[10px] tracking-[0.5em] text-white/50 font-mono">INITIALIZING FIVECOURT_OS...</p>
+            </motion.div>
+          ) : (
+            <motion.div key="main" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              {currentGame === "hub" ? (
+                <motion.div key="hub" className="p-8 pt-12 flex flex-col gap-8">
+                  <div className="text-center py-12 px-6">
+                    <h1 className="text-6xl font-black italic tracking-tighter mb-2">FIVE<span className="text-orange-500">COURT</span></h1>
+                    <p className="text-[10px] text-white/30 uppercase tracking-[0.4em] mb-10">PROFESSIONAL BASKETBALL ANALYTICS ENGINE</p>
+
+                    <div className="w-full overflow-hidden bg-zinc-900 border-y border-white/5 py-2 mb-10">
+                      <motion.div 
+                        className="whitespace-nowrap flex gap-10 text-[9px] font-mono text-orange-500/80 uppercase"
+                        animate={{ x: ["100%", "-100%"] }}
+                        transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+                      >
+                        <span>LAKERS CLINCH WESTERN CONFERENCE FINALS SEED</span>
+                        <span>DATA SYNC COMPLETE: 2024 FINALS ARCHIVE LOADED</span>
+                        <span>NEW ANALYTICAL MODULES ONLINE</span>
+                      </motion.div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    {[ 
+                      {id:"missing", label:"MISSING 5", icon:<Search />},
+                      {id:"code", label:"COURT CODE", icon:<Key />}, 
+                      {id:"trivia", label:"TRIVIA", icon:<Brain />}, 
+                      {id:"manager", label:"MANAGER", icon:<Clipboard />}, 
+                      {id:"career", label:"CAREER", icon:<TrendingUp />}, 
+                      {id:"bingo", label:"BINGO", icon:<Target />}, 
+                      {id:"grid", label:"TEAM GRID", icon:<LayoutGrid />} 
+                    ].map((item) => (
+                      <button 
+                        key={item.id} 
+                        onClick={() => handleGameSelect(item.id)} 
+                        className="h-32 rounded-3xl bg-white/5 border border-white/10 p-6 flex flex-col justify-between hover:bg-orange-600/20 hover:border-orange-500/50 transition-all text-left group"
+                      >
+                        <div className="text-2xl text-white/70 group-hover:text-orange-500 transition-colors">
+                          {item.icon}
+                        </div>
+                        <span className="font-black tracking-tighter text-white/90">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div key="game" className="p-6">
+                  <div className="mb-8 border-b border-white/10 pb-4">
+                    <h1 onClick={() => handleGameSelect("hub")} className="text-xl font-black italic tracking-tighter cursor-pointer hover:text-orange-500">
+                      <span className="text-orange-500">FIVE</span>COURT
+                    </h1>
+                  </div>
+                  
+                  {currentGame === "trivia" && <TriviaGame />}
+                  {currentGame === "manager" && <ManagerGame />}
+                  {currentGame === "career" && <CareerGame />}
+                  {currentGame === "missing" && <MissingGame />}
+                  {currentGame === "bingo" && <BingoGame />}
+                  {currentGame === "code" && <CourtCode />}
+                  {currentGame === "grid" && !selectedTeam && (
+                    <div className="text-center"><h2 className="text-2xl font-black mb-8 uppercase">TAKIMINI SEÇ</h2>
+                      <div className="grid grid-cols-2 gap-4">
+                        {Object.keys(ALL_TEAMS).map(key => <button key={key} onClick={() => setSelectedTeam(key)} className="h-24 bg-zinc-900 rounded-2xl font-black hover:bg-orange-600">{ALL_TEAMS[key].name}</button>)}
+                      </div>
+                    </div>
+                  )}
+                  {currentGame === "grid" && selectedTeam && <TeamGrid teamKey={selectedTeam} onBack={() => setSelectedTeam(null)} />}
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+export default App;
