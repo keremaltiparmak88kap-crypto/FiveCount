@@ -47,10 +47,51 @@ const BasketballAtmosphere = () => (
   </div>
 );
 
+const NBA_TEAMS = [
+  "CELTICS", "NETS", "KNICKS", "76ERS", "RAPTORS",
+  "BULLS", "CAVALIERS", "PISTONS", "PACERS", "BUCKS",
+  "HAWKS", "HORNETS", "HEAT", "MAGIC", "WIZARDS",
+  "NUGGETS", "TIMBERWOLVES", "THUNDER", "BLAZERS", "JAZZ",
+  "WARRIORS", "CLIPPERS", "LAKERS", "SUNS", "KINGS",
+  "MAVERICKS", "ROCKETS", "GRIZZLIES", "PELICANS", "SPURS"
+];
+
 const ArenaDoor = ({ isOpen }) => (
   <motion.div className="fixed inset-0 z-[200] flex pointer-events-none">
-    <motion.div className="w-1/2 h-full bg-[#060608] border-r-2 border-orange-500 flex items-center justify-end pr-4" animate={{ x: isOpen ? "-100%" : "0%" }} transition={{ duration: 0.8 }}><span className="text-6xl font-black italic tracking-tighter text-white">FIVE</span></motion.div>
-    <motion.div className="w-1/2 h-full bg-[#060608] border-l-2 border-orange-500 flex items-center justify-start pl-4" animate={{ x: isOpen ? "100%" : "0%" }} transition={{ duration: 0.8 }}><span className="text-6xl font-black italic tracking-tighter text-orange-500">COURT</span></motion.div>
+    {/* SOL KAPI */}
+    <motion.div className="w-1/2 h-full bg-[#060608] border-r-2 border-orange-500 flex items-center justify-end pr-4 relative overflow-hidden" 
+            animate={{ x: isOpen ? "-100%" : "0%" }} transition={{ duration: 0.8 }}>
+  
+  <motion.div 
+    className="absolute inset-0 flex items-center whitespace-nowrap opacity-[0.05] w-max"
+    animate={{ x: ["0%", "-50%"] }} 
+    transition={{ repeat: Infinity, ease: "linear", duration: 40 }}
+  >
+     {[...NBA_TEAMS, ...NBA_TEAMS].map((team, i) => (
+       <span key={i} className="text-[60px] font-black italic uppercase mx-8 shrink-0">{team}</span>
+     ))}
+  </motion.div>
+
+  <span className="text-6xl font-black italic tracking-tighter text-white z-10">FIVE</span>
+</motion.div>
+
+{/* SAĞ KAPI */}
+    <motion.div 
+      className="w-1/2 h-full bg-[#060608] border-l-2 border-orange-500 flex items-center justify-start pl-4 relative overflow-hidden" 
+      animate={{ x: isOpen ? "100%" : "0%" }} 
+      transition={{ duration: 0.8 }}
+    >
+      <motion.div 
+        className="absolute flex items-center whitespace-nowrap opacity-[0.05] left-0"
+        animate={{ x: ["0%", "-50%"] }} 
+        transition={{ repeat: Infinity, ease: "linear", duration: 40 }}
+      >
+         {[...NBA_TEAMS, ...NBA_TEAMS].map((team, i) => (
+           <span key={i} className="text-[60px] font-black italic uppercase mx-8 shrink-0">{team}</span>
+         ))}
+      </motion.div>
+      <span className="text-6xl font-black italic tracking-tighter text-orange-500 z-10">COURT</span>
+    </motion.div>
   </motion.div>
 );
 
