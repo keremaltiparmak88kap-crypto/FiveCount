@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useGameStore } from './store';
 
 const FindTeam = ({ teams }) => {
+  const addScore = useGameStore((state) => state.addScore);
   const [currentTeam, setCurrentTeam] = useState(null);
   const [input, setInput] = useState("");
   const [status, setStatus] = useState("idle");
@@ -24,6 +26,7 @@ const FindTeam = ({ teams }) => {
       setStatus("correct");
       const points = 10 + (streak * 5); // Seri arttıkça puan da artar
       setScore(prev => prev + points);
+      addScore(points, "find");
       setStreak(prev => prev + 1);
     } else {
       setStatus("wrong");

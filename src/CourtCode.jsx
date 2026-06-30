@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShareButton } from './ShareButton'; // Dosyan aynı klasördeyse böyle
+import { useGameStore } from './store';
 const CourtCode = () => {
+  const addScore = useGameStore((state) => state.addScore);
   const target = "ALPEREN";
   const targetName = "ALPEREN ŞENGÜN";
   
@@ -33,7 +35,9 @@ const CourtCode = () => {
       
       if (currentGuess === target) {
         setWon(true);
-        setScore((5 - currentRow) * 100); // Satır puanı
+        const points = (5 - currentRow) * 100; // Satır puanı
+        setScore(points);
+        addScore(points, "code");
       }
       setCurrentGuess("");
       setCurrentRow(currentRow + 1);

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useGameStore } from './store';
 
 const CAREER_DATABASE = [
   { name: "LeBron James", path: ["CLE (2003-2010)", "MIA (2010-2014)", "CLE (2014-2018)", "LAL (2018-Present)"] },
@@ -14,6 +15,7 @@ const CAREER_DATABASE = [
 ];
 
 function CareerGame() {
+  const addScore = useGameStore((state) => state.addScore);
   const [target, setTarget] = useState(null);
   const [guess, setGuess] = useState("");
   const [attempts, setAttempts] = useState([]);
@@ -45,6 +47,8 @@ function CareerGame() {
     if (isCorrect) {
       setWon(true);
       setGameOver(true);
+      const points = (5 - nextAttempts.length) * 50; // Kalan hak arttıkça puan artar
+      addScore(points, "career");
     } else if (nextAttempts.length >= 4) {
       setGameOver(true);
     }

@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playerPool } from './data';
+import { useGameStore } from './store';
 
 const MatchGame = () => {
+  const addScore = useGameStore((state) => state.addScore);
   const [usedPlayerIds, setUsedPlayerIds] = useState([]);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -23,6 +25,7 @@ const MatchGame = () => {
     if (player.tags.includes(tag)) {
       setFeedback('correct');
       setScore(s => s + 10);
+      addScore(10, "match");
       setTimeout(() => {
         setFeedback(null);
         const next = getNextPlayer();

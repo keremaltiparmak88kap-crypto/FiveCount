@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useGameStore } from './store';
 
 // 15 adet veri ile genişletilmiş liste
 const DRAFT_DATA = [
@@ -21,6 +22,7 @@ const DRAFT_DATA = [
 ];
 
 const DraftRoulette = () => {
+  const addScore = useGameStore((state) => state.addScore);
   const [current, setCurrent] = useState(DRAFT_DATA[0]);
   const [options, setOptions] = useState([]);
   const [score, setScore] = useState(0);
@@ -45,6 +47,7 @@ const DraftRoulette = () => {
     if (name === current.name) {
       setStatus("correct");
       setScore(s => s + 200);
+      addScore(200, "draft");
       setIsTransitioning(true);
       setTimeout(() => {
         const next = DRAFT_DATA[Math.floor(Math.random() * DRAFT_DATA.length)];

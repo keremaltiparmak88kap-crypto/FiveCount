@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useGameStore } from './store';
 
 // --- MAÇ VERİTABANI (20 MAÇ) ---
 const MATCH_POOL = [
@@ -26,6 +27,7 @@ const MATCH_POOL = [
 ];
 
 const MissingGame = () => {
+  const addScore = useGameStore((state) => state.addScore);
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [time, setTime] = useState(0);
@@ -57,6 +59,7 @@ const MissingGame = () => {
     
     if (opt === match.missing) {
       setScore(s => s + 100);
+      addScore(100, "missing");
       setStatus('correct');
     } else {
       setStatus('wrong');

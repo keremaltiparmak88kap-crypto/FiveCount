@@ -225,7 +225,10 @@ function ManagerGame() {
       setInjuries(nextInjuries);
 
       if (!activeSim.isPlayoff) {
-        if (userWon) setUserRecord(prev => ({ ...prev, w: prev.w + 1 }));
+        if (userWon) {
+          setUserRecord(prev => ({ ...prev, w: prev.w + 1 }));
+          addScore(150, "manager");
+        }
         else setUserRecord(prev => ({ ...prev, l: prev.l + 1 }));
 
         const updatedTeams = leagueTeams.map((t, idx) => {
@@ -236,6 +239,8 @@ function ManagerGame() {
         setLeagueTeams(updatedTeams);
         setCurrentMatchIndex(prev => prev + 1);
       } else {
+        if (userWon) addScore(200, "manager"); // tekil playoff maçı kazanımı
+
         const updatedBracket = playoffBracket.map(match => {
           if (match.id === activeSim.playoffId) {
             const userWinCount = userWon ? match.userW + 1 : match.userW;
@@ -248,6 +253,11 @@ function ManagerGame() {
           return match;
         });
         setPlayoffBracket(updatedBracket);
+
+        const clinchedMatch = updatedBracket.find(m => m.id === activeSim.playoffId);
+        if (clinchedMatch?.status === "USER_ADVANCED") {
+          addScore(500, "manager"); // seriyi kapatma bonusu
+        }
       }
     }
   };
@@ -292,7 +302,10 @@ function ManagerGame() {
       setPlayoffRound("FINALS");
     } else if (playoffRound === "FINALS") {
       const activeMatch = playoffBracket.find(m => m.id === "F1");
-      if (activeMatch.status === "USER_ADVANCED") setPlayoffRound("CHAMPION");
+      if (activeMatch.status === "USER_ADVANCED") {
+        setPlayoffRound("CHAMPION");
+        addScore(1000, "manager"); // şampiyonluk bonusu
+      }
     }
   };
 

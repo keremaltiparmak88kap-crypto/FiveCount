@@ -27,7 +27,7 @@ function TriviaGame() {
 
     if (option === currentQ.answer) {
       setScore((s) => s + 100);
-      addScore(100); // Platform puanına ekle
+      addScore(100, "trivia"); // Platform puanına ekle
     }
 
     setTimeout(() => {

@@ -2,7 +2,7 @@ import React, { useState,useEffect } from 'react';
 import MainLayout from './MainLayout'; // Az önce oluşturduğumuz layout
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from './store';
-import { Search, Key, Brain, Clipboard, TrendingUp, BarChart3, Target, LayoutGrid, Eye, Trophy, Shirt  } from 'lucide-react';
+import { Search, Key, Brain, Clipboard, TrendingUp, BarChart3, Target, LayoutGrid, Eye, Trophy, Shirt, Tags  } from 'lucide-react';
 import ManagerGame from './ManagerGame';
 import CareerGame from './CareerGame';
 import TriviaGame from './TriviaGame';
@@ -14,6 +14,7 @@ import FindTeam from './FindTeam';
 import Footer from './Footer'; 
 import DraftRoulette from './DraftRoulette';
 import JerseyGuess from './JerseyGuess';
+import MatchGame from './MatchGame';
 import { PLAYERS } from './nbaData';// Yeni bileşeni import et
 // --- SABİT TANIMLAMALAR ---
 const DAILY_PLAYER = {
@@ -125,14 +126,43 @@ const ArenaDoor = ({ isOpen }) => (
   </motion.div>
 );
 
+// --- OYUN LİSTESİ (merkezi tanım — kart, rozet ve "son oynananlar" için ortak kullanılır) ---
+const GAMES = [
+  { id: "missing", label: "MISSING 5", desc: "Name the 5 players missing from a classic lineup", icon: "Search" },
+  { id: "code", label: "COURT CODE", desc: "Crack the hidden team from a string of clues", icon: "Key" },
+  { id: "trivia", label: "TRIVIA", desc: "Rapid-fire questions on NBA history and stats", icon: "Brain" },
+  { id: "manager", label: "MANAGER", desc: "Build and run your own dream roster", icon: "Clipboard" },
+  { id: "career", label: "CAREER", desc: "Trace a player's stat line through their career", icon: "BarChart3" },
+  { id: "bingo", label: "BINGO", desc: "Mark off live moments as the action unfolds", icon: "Target" },
+  { id: "grid", label: "TEAM GRID", desc: "Place players into the right team squares", icon: "LayoutGrid" },
+  { id: "find", label: "FIND TEAM", desc: "Spot the team behind a set of visual clues", icon: "Eye" },
+  { id: "draft", label: "DRAFT ROUL.", desc: "Spin the wheel for a random draft pick", icon: "Trophy", isNew: true },
+  { id: "jersey", label: "JERSEY #", desc: "Identify the player from their jersey number", icon: "Shirt", isNew: true },
+  { id: "match", label: "TAG MATCH", desc: "Tag each player with the trait that fits them", icon: "Tags" }
+];
+
+const GAME_ICONS = { Search, Key, Brain, Clipboard, BarChart3, Target, LayoutGrid, Eye, Trophy, Shirt, Tags };
+
 // --- ANA BİLEŞEN ---
 function App() {
-  const { username, setUsername } = useGameStore();
+  const { username, setUsername, totalScore, rank, bestScores } = useGameStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentGame, setCurrentGame] = useState("hub");
   const [doorOpen, setDoorOpen] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState(null);
+  const [recentGames, setRecentGames] = useState([]);
+
+  // "Son oynananlar" için localStorage'dan oku
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('fc_recent') || '[]');
+      setRecentGames(Array.isArray(saved) ? saved : []);
+    } catch (e) {}
+  }, []);
+
+  // Bugünün öne çıkan oyunu (gün bazlı sabit, her gün değişir)
+  const todaysPickId = GAMES[new Date().getDate() % GAMES.length].id;
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000);
@@ -145,11 +175,25 @@ function App() {
     setTimeout(() => {
       setCurrentGame(gameId);
       setDoorOpen(true);
+      if (gameId !== "hub") {
+        setRecentGames(prev => {
+          const updated = [gameId, ...prev.filter(id => id !== gameId)].slice(0, 4);
+          try { localStorage.setItem('fc_recent', JSON.stringify(updated)); } catch (e) {}
+          return updated;
+        });
+      }
     }, 800);
   };
 
   return (
     <div className="min-h-screen bg-[#060608] text-white relative font-sans">
+      <style>{`
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #060608; }
+        ::-webkit-scrollbar-thumb { background: rgba(249,115,22,0.35); border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(249,115,22,0.6); }
+        * { scrollbar-width: thin; scrollbar-color: rgba(249,115,22,0.35) #060608; }
+      `}</style>
       <BasketballAtmosphere />
       <ArenaDoor isOpen={doorOpen} />
       
@@ -172,56 +216,118 @@ function App() {
           ) : (
             <motion.div key="main" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-grow">
               {currentGame === "hub" ? (
-                <motion.div key="hub" className="p-8 pt-12 flex flex-col gap-8">
+                <motion.div key="hub" className="p-8 pt-12 flex flex-col gap-3">
                   {/* ... Hub içeriğin ... */}
                   <div className="text-center py-12 px-6">
-                    <h1 className="text-6xl font-black italic tracking-tighter mb-2">FIVE<span className="text-orange-500">COURT</span></h1>
-                    <p className="text-[10px] text-white/30 uppercase tracking-[0.4em] mb-10">PROFESSIONAL BASKETBALL ANALYTICS ENGINE</p>
+                    <img 
+                      src="/logo.png" 
+                      alt="FiveCourt - Build Your Legacy" 
+                      className="mx-auto w-32 sm:w-40 mb-4 rounded-3xl drop-shadow-[0_0_25px_rgba(249,115,22,0.25)]"
+                    />
 
-                    <div className="w-full overflow-hidden bg-zinc-900 border-y border-white/5 py-2 mb-10">
+                    <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+                      <span className="text-[9px] uppercase tracking-[0.2em] text-orange-400 font-bold">{rank}</span>
+                      <span className="w-1 h-1 rounded-full bg-white/20" />
+                      <span className="text-[9px] uppercase tracking-[0.2em] text-white/50">{totalScore.toLocaleString()} PTS</span>
+                    </div>
+
+                    <div className="w-full overflow-hidden bg-zinc-900 border-y border-white/5 py-2 mb-4">
                       <motion.div 
                         className="whitespace-nowrap flex gap-10 text-[9px] font-mono text-orange-500/80 uppercase"
                         animate={{ x: ["100%", "-100%"] }}
                         transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
                       >
-                        <span>LAKERS CLINCH WESTERN CONFERENCE FINALS SEED</span>
-                        <span>DATA SYNC COMPLETE: 2024 FINALS ARCHIVE LOADED</span>
-                        <span>NEW ANALYTICAL MODULES ONLINE</span>
+                        <span>10 GAMES LIVE — PICK YOUR COURT</span>
+                        <span>BINGO: 5 NEW LEGEND CARDS UNLOCKED</span>
+                        <span>3,204 PLAYERS ONLINE RIGHT NOW</span>
+                        <span>NEW MODE LOADING — COMING SOON</span>
+                        <span>12,480 GAMES PLAYED TODAY</span>
+                        <span>TOP TRIVIA STREAK: 47 IN A ROW</span>
+                        <span>DRAFT ROULETTE: 1,022 SPINS TODAY</span>
                       </motion.div>
                     </div>
                   </div>
                   
+                  {recentGames.length > 0 && (
+                    <div className="px-2 mb-1">
+                      <p className="text-[9px] uppercase tracking-[0.3em] text-white/30 mb-2">Recently played</p>
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {recentGames.map((gid) => {
+                          const g = GAMES.find(g => g.id === gid);
+                          if (!g) return null;
+                          const Icon = GAME_ICONS[g.icon];
+                          return (
+                            <button
+                              key={gid}
+                              onClick={() => handleGameSelect(gid)}
+                              className="shrink-0 flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/60 hover:border-orange-500/40 hover:text-orange-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/70"
+                            >
+                              <Icon size={12} />
+                              <span className="text-[10px] font-bold tracking-tight">{g.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-4">
-                    {[ 
-                      {id:"missing", label:"MISSING 5", icon:<Search />},
-                      {id:"code", label:"COURT CODE", icon:<Key />}, 
-                      {id:"trivia", label:"TRIVIA", icon:<Brain />}, 
-                      {id:"manager", label:"MANAGER", icon:<Clipboard />}, 
-                      {id:"career", label:"CAREER", icon:<BarChart3 />}, 
-                      {id:"bingo", label:"BINGO", icon:<Target />}, 
-                      {id:"grid", label:"TEAM GRID", icon:<LayoutGrid />},
-                      {id:"find", label:"FIND TEAM", icon:<Eye />},
-                      {id:"draft", label:"DRAFT ROUL.", icon:<Trophy />},
-                      {id:"jersey", label:"JERSEY #", icon:<Shirt />}
-                    ].map((item) => (
-                      <button 
-                        key={item.id} 
-                        onClick={() => handleGameSelect(item.id)} 
-                        className="h-32 rounded-3xl bg-white/5 border border-white/10 p-6 flex flex-col justify-between hover:bg-orange-600/20 hover:border-orange-500/50 transition-all text-left group"
-                      >
-                        <div className="text-2xl text-white/70 group-hover:text-orange-500 transition-colors">
-                          {item.icon}
-                        </div>
-                        <span className="font-black tracking-tighter text-white/90">{item.label}</span>
-                      </button>
-                    ))}
+                    {GAMES.map((item) => {
+                      const Icon = GAME_ICONS[item.icon];
+                      const isTodaysPick = item.id === todaysPickId;
+                      return (
+                        <button 
+                          key={item.id} 
+                          onClick={() => handleGameSelect(item.id)} 
+                          className={`relative h-40 rounded-2xl p-5 flex flex-col justify-between text-left group overflow-hidden
+                                     bg-gradient-to-b from-white/[0.06] to-white/[0.015] 
+                                     border ${isTodaysPick ? 'border-orange-500/50' : 'border-white/10'}
+                                     shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]
+                                     transition-all duration-300
+                                     hover:border-orange-500/40 hover:from-orange-500/[0.08] hover:to-white/[0.02]
+                                     hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-10px_rgba(249,115,22,0.25)]
+                                     focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060608]`}
+                        >
+                          {/* ambient corner glow */}
+                          <div className="pointer-events-none absolute -top-10 -right-10 w-24 h-24 rounded-full bg-orange-500/0 group-hover:bg-orange-500/10 blur-2xl transition-all duration-300" />
+
+                          {/* rozetler */}
+                          {item.isNew && (
+                            <span className="absolute top-3 right-3 text-[8px] font-black tracking-wider px-1.5 py-0.5 rounded-full bg-orange-500 text-black">NEW</span>
+                          )}
+                          {isTodaysPick && !item.isNew && (
+                            <span className="absolute top-3 right-3 text-[8px] font-black tracking-wider px-1.5 py-0.5 rounded-full bg-white/10 text-orange-400 border border-orange-500/40">TODAY'S PICK</span>
+                          )}
+
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center
+                                           bg-white/5 border border-white/10 text-white/60
+                                           group-hover:bg-orange-500/15 group-hover:border-orange-500/40 group-hover:text-orange-400
+                                           transition-all duration-300">
+                            <Icon size={20} />
+                          </div>
+
+                          <div className="relative flex items-end justify-between">
+                            <div>
+                              <span className="block font-black tracking-tighter text-white/90 group-hover:text-white">{item.label}</span>
+                              <span className="block mt-1 text-[11px] leading-snug text-white/35 group-hover:text-white/55 transition-colors">{item.desc}</span>
+                            </div>
+                            {bestScores?.[item.id] > 0 && (
+                              <span className="shrink-0 text-[9px] font-bold text-orange-400/80 whitespace-nowrap ml-2">
+                                BEST {bestScores[item.id]}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </motion.div>
               ) : (
                 <motion.div key="game" className="p-6">
                   <div className="mb-8 border-b border-white/10 pb-4">
-                    <h1 onClick={() => handleGameSelect("hub")} className="text-xl font-black italic tracking-tighter cursor-pointer hover:text-orange-500">
-                      <span className="text-orange-500">FIVE</span>COURT
+                    <h1 onClick={() => handleGameSelect("hub")} className="group text-xl font-black italic tracking-tighter cursor-pointer">
+                      <span className="text-orange-500">FIVE</span>
+                      <span className="text-white transition-colors duration-200 group-hover:text-orange-500">COURT</span>
                     </h1>
                   </div>
                   
@@ -235,6 +341,7 @@ function App() {
                   {currentGame === "find" && <FindTeam teams={ALL_TEAMS} />}
                   {currentGame === "draft" && <DraftRoulette />}
                   {currentGame === "jersey" && <JerseyGuess />}
+                  {currentGame === "match" && <MatchGame />}
                   {/* Grid mantığın */}
                   {currentGame === "grid" && !selectedTeam && (
                     <div className="text-center"><h2 className="text-2xl font-black mb-8 uppercase">TAKIMINI SEÇ</h2>

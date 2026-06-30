@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useGameStore } from './store';
 
 // Each player's trait / defining characteristic
 const PLAYER_TRAITS = {
@@ -66,6 +67,7 @@ const pickRandom = (arr, count) => {
 };
 
 const TeamGrid = ({ teamKey, onBack }) => {
+  const addScore = useGameStore((state) => state.addScore);
   // Oyun State'leri
   const [boxes, setBoxes] = useState([]);
   const [target, setTarget] = useState(null);
@@ -114,6 +116,7 @@ const TeamGrid = ({ teamKey, onBack }) => {
 
     if (boxes[idx].player === target) {
       setStats(prev => ({ ...prev, correct: prev.correct + 1 }));
+      addScore(50, "grid");
       const newBoxes = [...boxes];
       newBoxes[idx].solved = true;
       setBoxes(newBoxes);
