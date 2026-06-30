@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import React, { useState,useEffect } from 'react';
+import MainLayout from './MainLayout'; // Az önce oluşturduğumuz layout
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from './store';
-import { Search, Key, Brain, Clipboard, TrendingUp, Target, LayoutGrid } from 'lucide-react';
+import { Search, Key, Brain, Clipboard, TrendingUp, BarChart3, Target, LayoutGrid, Eye, Trophy, Shirt  } from 'lucide-react';
 import ManagerGame from './ManagerGame';
 import CareerGame from './CareerGame';
 import TriviaGame from './TriviaGame';
@@ -9,7 +10,11 @@ import BingoGame from './BingoGame';
 import MissingGame from './MissingGame';
 import TeamGrid from './TeamGrid';
 import CourtCode from './CourtCode';
-
+import FindTeam from './FindTeam';
+import Footer from './Footer'; 
+import DraftRoulette from './DraftRoulette';
+import JerseyGuess from './JerseyGuess';
+import { PLAYERS } from './nbaData';// Yeni bileşeni import et
 // --- SABİT TANIMLAMALAR ---
 const DAILY_PLAYER = {
   name: "Marcus 'The Flash' Jaxon",
@@ -17,11 +22,36 @@ const DAILY_PLAYER = {
 };
 
 const ALL_TEAMS = {
-  LAL: { name: "LAKERS", color: "from-yellow-500 to-purple-800" },
-  GSW: { name: "WARRIORS", color: "from-blue-600 to-yellow-500" },
-  BOS: { name: "CELTICS", color: "from-green-700 to-green-900" },
-  CHI: { name: "BULLS", color: "from-red-700 to-red-900" },
-  MIA: { name: "HEAT", color: "from-red-600 to-orange-500" }
+  ATL: { name: "HAWKS", color: "from-red-600 to-yellow-400", logo: "https://a.espncdn.com/i/teamlogos/nba/500/atl.png" },
+  BOS: { name: "CELTICS", color: "from-green-700 to-green-900", logo: "https://a.espncdn.com/i/teamlogos/nba/500/bos.png" },
+  BKN: { name: "NETS", color: "from-gray-700 to-black", logo: "https://a.espncdn.com/i/teamlogos/nba/500/bkn.png" },
+  CHA: { name: "HORNETS", color: "from-teal-600 to-purple-800", logo: "https://a.espncdn.com/i/teamlogos/nba/500/cha.png" },
+  CHI: { name: "BULLS", color: "from-red-700 to-red-900", logo: "https://a.espncdn.com/i/teamlogos/nba/500/chi.png" },
+  CLE: { name: "CAVALIERS", color: "from-red-700 to-yellow-600", logo: "https://a.espncdn.com/i/teamlogos/nba/500/cle.png" },
+  DAL: { name: "MAVERICKS", color: "from-blue-700 to-blue-900", logo: "https://a.espncdn.com/i/teamlogos/nba/500/dal.png" },
+  DEN: { name: "NUGGETS", color: "from-blue-600 to-yellow-500", logo: "https://a.espncdn.com/i/teamlogos/nba/500/den.png" },
+  DET: { name: "PISTONS", color: "from-blue-700 to-red-600", logo: "https://a.espncdn.com/i/teamlogos/nba/500/det.png" },
+  GSW: { name: "WARRIORS", color: "from-blue-600 to-yellow-500", logo: "https://a.espncdn.com/i/teamlogos/nba/500/gs.png" },
+  HOU: { name: "ROCKETS", color: "from-red-600 to-red-800", logo: "https://a.espncdn.com/i/teamlogos/nba/500/hou.png" },
+  IND: { name: "PACERS", color: "from-blue-700 to-yellow-500", logo: "https://a.espncdn.com/i/teamlogos/nba/500/ind.png" },
+  LAC: { name: "CLIPPERS", color: "from-red-600 to-blue-700", logo: "https://a.espncdn.com/i/teamlogos/nba/500/lac.png" },
+  LAL: { name: "LAKERS", color: "from-yellow-500 to-purple-800", logo: "https://a.espncdn.com/i/teamlogos/nba/500/lal.png" },
+  MEM: { name: "GRIZZLIES", color: "from-blue-400 to-blue-800", logo: "https://a.espncdn.com/i/teamlogos/nba/500/mem.png" },
+  MIA: { name: "HEAT", color: "from-red-600 to-orange-500", logo: "https://a.espncdn.com/i/teamlogos/nba/500/mia.png" },
+  MIL: { name: "BUCKS", color: "from-green-600 to-neutral-800", logo: "https://a.espncdn.com/i/teamlogos/nba/500/mil.png" },
+  MIN: { name: "TIMBERWOLVES", color: "from-blue-700 to-gray-500", logo: "https://a.espncdn.com/i/teamlogos/nba/500/min.png" },
+  NOP: { name: "PELICANS", color: "from-blue-900 to-gold-500", logo: "https://a.espncdn.com/i/teamlogos/nba/500/no.png" },
+  NYK: { name: "KNICKS", color: "from-blue-600 to-orange-500", logo: "https://a.espncdn.com/i/teamlogos/nba/500/ny.png" },
+  OKC: { name: "THUNDER", color: "from-blue-500 to-orange-500", logo: "https://a.espncdn.com/i/teamlogos/nba/500/okc.png" },
+  ORL: { name: "MAGIC", color: "from-blue-700 to-black", logo: "https://a.espncdn.com/i/teamlogos/nba/500/orl.png" },
+  PHI: { name: "76ERS", color: "from-red-600 to-blue-700", logo: "https://a.espncdn.com/i/teamlogos/nba/500/phi.png" },
+  PHX: { name: "SUNS", color: "from-orange-500 to-purple-700", logo: "https://a.espncdn.com/i/teamlogos/nba/500/phx.png" },
+  POR: { name: "TRAIL BLAZERS", color: "from-red-600 to-gray-800", logo: "https://a.espncdn.com/i/teamlogos/nba/500/por.png" },
+  SAC: { name: "KINGS", color: "from-purple-700 to-gray-400", logo: "https://a.espncdn.com/i/teamlogos/nba/500/sac.png" },
+  SAS: { name: "SPURS", color: "from-gray-400 to-black", logo: "https://a.espncdn.com/i/teamlogos/nba/500/sa.png" },
+  TOR: { name: "RAPTORS", color: "from-red-700 to-black", logo: "https://a.espncdn.com/i/teamlogos/nba/500/tor.png" },
+  UTA: { name: "JAZZ", color: "from-yellow-400 to-blue-700", logo: "https://a.espncdn.com/i/teamlogos/nba/500/utah.png" },
+  WAS: { name: "WIZARDS", color: "from-blue-700 to-red-600", logo: "https://a.espncdn.com/i/teamlogos/nba/500/wsh.png" }
 };
 
 // --- YARDIMCI FONKSİYONLAR ---
@@ -140,9 +170,10 @@ function App() {
               <p className="mt-4 text-[10px] tracking-[0.5em] text-white/50 font-mono">INITIALIZING FIVECOURT_OS...</p>
             </motion.div>
           ) : (
-            <motion.div key="main" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <motion.div key="main" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-grow">
               {currentGame === "hub" ? (
                 <motion.div key="hub" className="p-8 pt-12 flex flex-col gap-8">
+                  {/* ... Hub içeriğin ... */}
                   <div className="text-center py-12 px-6">
                     <h1 className="text-6xl font-black italic tracking-tighter mb-2">FIVE<span className="text-orange-500">COURT</span></h1>
                     <p className="text-[10px] text-white/30 uppercase tracking-[0.4em] mb-10">PROFESSIONAL BASKETBALL ANALYTICS ENGINE</p>
@@ -166,9 +197,12 @@ function App() {
                       {id:"code", label:"COURT CODE", icon:<Key />}, 
                       {id:"trivia", label:"TRIVIA", icon:<Brain />}, 
                       {id:"manager", label:"MANAGER", icon:<Clipboard />}, 
-                      {id:"career", label:"CAREER", icon:<TrendingUp />}, 
+                      {id:"career", label:"CAREER", icon:<BarChart3 />}, 
                       {id:"bingo", label:"BINGO", icon:<Target />}, 
-                      {id:"grid", label:"TEAM GRID", icon:<LayoutGrid />} 
+                      {id:"grid", label:"TEAM GRID", icon:<LayoutGrid />},
+                      {id:"find", label:"FIND TEAM", icon:<Eye />},
+                      {id:"draft", label:"DRAFT ROUL.", icon:<Trophy />},
+                      {id:"jersey", label:"JERSEY #", icon:<Shirt />}
                     ].map((item) => (
                       <button 
                         key={item.id} 
@@ -197,6 +231,11 @@ function App() {
                   {currentGame === "missing" && <MissingGame />}
                   {currentGame === "bingo" && <BingoGame />}
                   {currentGame === "code" && <CourtCode />}
+                  {currentGame === "grid" && selectedTeam && <TeamGrid teamKey={selectedTeam} onBack={() => setSelectedTeam(null)} />}
+                  {currentGame === "find" && <FindTeam teams={ALL_TEAMS} />}
+                  {currentGame === "draft" && <DraftRoulette />}
+                  {currentGame === "jersey" && <JerseyGuess />}
+                  {/* Grid mantığın */}
                   {currentGame === "grid" && !selectedTeam && (
                     <div className="text-center"><h2 className="text-2xl font-black mb-8 uppercase">TAKIMINI SEÇ</h2>
                       <div className="grid grid-cols-2 gap-4">
@@ -204,15 +243,16 @@ function App() {
                       </div>
                     </div>
                   )}
-                  {currentGame === "grid" && selectedTeam && <TeamGrid teamKey={selectedTeam} onBack={() => setSelectedTeam(null)} />}
                 </motion.div>
               )}
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Footer Buraya Eklendi */}
+        <Footer />
       </div>
     </div>
   );
-}
-
+};
 export default App;

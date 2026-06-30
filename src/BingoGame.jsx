@@ -1,114 +1,122 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { NBA_DATABASE } from './nbaData';
+import { getRandomPlayer, validateInteraction } from './playerManager';
 
-const BINGO_CATEGORIES = [
-  "Turkish Player", "Lakers Legend", "3-Point King", "6 Rings", "MVP",
-  "Greek Freak", "Center", "Hall of Fame", "Drafted 1st", "90s Icon",
-  "Point Guard", "Champion", "All-Star", "Foreign", "Scoring Champ",
-  "Defensive POY", "Skyhook", "Showtime", "King James", "Black Mamba",
-  "Rookie", "Olympian", "Double Double", "Fadeaway", "All-Defensive"
+const CATEGORIES = [
+  { id: "MVP", label: "MVP" }, { id: "Champion", label: "CHAMPION" },
+  { id: "Center", label: "CENTER" }, { id: "USA", label: "USA" },
+  { id: "All-Star", label: "ALL-STAR" }, { id: "3-Point King", label: "3PT KING" },
+  { id: "Canada", label: "CANADA" }, { id: "All-Defensive", label: "DEFENSE" },
+  { id: "Drafted 1st", label: "1ST PICK" }, { id: "Scoring Champ", label: "SCORER" },
+  { id: "Greece", label: "GREECE" }, { id: "Serbia", label: "SERBIA" },
+  { id: "Showtime", label: "SHOWTIME" }, { id: "90s Icon", label: "90S ICON" },
+  { id: "Point Guard", label: "PG" }, { id: "Slovenia", label: "SLOVENIA" }
 ];
 
-const CATEGORY_ICONS = {
-  "Turkish Player": "🇹🇷", "Lakers Legend": "💜", "3-Point King": "🎯",
-  "6 Rings": "💍", "MVP": "🏆", "Greek Freak": "🇬🇷",
-  "Center": "🏀", "Hall of Fame": "🏛️", "Drafted 1st": "🥇",
-  "90s Icon": "📺", "Point Guard": "🕹️", "Champion": "👑",
-  "All-Star": "⭐", "Foreign": "🌎", "Scoring Champ": "📊",
-  "Defensive POY": "🛡️", "Skyhook": "🪝", "Showtime": "🔥",
-  "King James": "👑", "Black Mamba": "🐍", "Rookie": "👶",
-  "Olympian": "🏅", "Double Double": "➕", "Fadeaway": "💫", "All-Defensive": "🧱"
-};
-
 const BingoGame = () => {
-  const [gameStarted, setGameStarted] = useState(false);
-  const [currentPlayer, setCurrentPlayer] = useState(NBA_DATABASE[0]);
-  const [filledCells, setFilledCells] = useState({});
+  const [player, setPlayer] = useState(getRandomPlayer());
+  const [filled, setFilled] = useState({});
   const [lives, setLives] = useState(3);
   const [score, setScore] = useState(0);
-  const [highlightedCategory, setHighlightedCategory] = useState(null);
+  const [skip, setSkip] = useState(5);
+  const [gameCount, setGameCount] = useState(1);
+  const [gameState, setGameState] = useState('playing');
+  const [errorCat, setErrorCat] = useState(null);
+  const [hintCat, setHintCat] = useState(null);
 
-  const getPlayerCategory = (player) => player.category || (player.pos === 'C' ? 'Center' : player.pos === 'PG' ? 'Point Guard' : 'All-Star');
+  const handleAction = (catId) => {
+    if (filled[catId] || gameState !== 'playing') return;
 
-  const nextPlayer = () => {
-    setCurrentPlayer(NBA_DATABASE[Math.floor(Math.random() * NBA_DATABASE.length)]);
-    setHighlightedCategory(null);
-  };
-
-  const handleCategoryClick = (cat) => {
-    if (cat === getPlayerCategory(currentPlayer)) {
-      setScore(s => s + (currentPlayer.ovr || 80));
-      setFilledCells(prev => ({ ...prev, [cat]: currentPlayer }));
-      nextPlayer();
+    if (validateInteraction(player, catId)) {
+      setFilled(prev => ({ ...prev, [catId]: player.name }));
+      setScore(s => s + 250);
+      nextTurn();
     } else {
+      setErrorCat(catId);
+      setTimeout(() => setErrorCat(null), 600);
       const newLives = lives - 1;
       setLives(newLives);
-      if (newLives <= 0) {
-        alert(`OYUN BİTTİ! Toplam Skor: ${score}`);
-        setScore(0);
-        setLives(3);
-        setFilledCells({});
-      }
-      nextPlayer();
+      if (newLives <= 0) setGameState('gameover');
+      else nextTurn();
     }
   };
 
-  const useHint = () => {
-    setHighlightedCategory(getPlayerCategory(currentPlayer));
-    setTimeout(() => setHighlightedCategory(null), 2000);
+  const nextTurn = () => {
+    if (gameCount >= 30) {
+      setGameState('win');
+    } else {
+      setGameCount(c => c + 1);
+      setPlayer(getRandomPlayer());
+    }
+  };
+
+  const restartGame = () => {
+    setFilled({}); setLives(3); setScore(0); setSkip(5);
+    setGameCount(1); setGameState('playing'); setPlayer(getRandomPlayer());
+  };
+
+  const shareScore = () => {
+    const text = `I just finished my NBA Scouting Report with ${score} points! Can you beat me?`;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white font-sans p-4 flex flex-col items-center">
+    <div className="min-h-screen bg-[#050505] text-white p-4 flex flex-col items-center font-sans">
       
-      {!gameStarted ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center min-h-screen text-center">
-          <h1 className="text-6xl font-black mb-4 bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">NBA BINGO</h1>
-          <p className="text-slate-400 mb-8 max-w-sm">Efsane oyuncuları kategorilerine yerleştir, 3 canını koru ve zirveye çık!</p>
-          <button onClick={() => setGameStarted(true)} className="px-10 py-4 bg-orange-600 rounded-full font-black text-lg hover:scale-105 transition shadow-[0_0_20px_rgba(234,88,12,0.4)]">OYUNA BAŞLA</button>
-        </motion.div>
-      ) : (
-        <div className="w-full max-w-md mt-6">
-          {/* Üst Panel */}
-          <div className="flex justify-between items-center mb-6 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-            <div className="flex gap-1">
-              {[1, 2, 3].map(i => <span key={i} className={`text-xl ${i <= lives ? "text-red-500" : "text-slate-700"}`}>{i <= lives ? "❤" : "🖤"}</span>)}
+      {/* Oyun Sonu Rapor Ekranı */}
+      <AnimatePresence>
+        {gameState !== 'playing' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-[#050505] flex items-center justify-center p-6">
+            <div className="bg-[#111] p-10 rounded-[32px] border border-[#222] w-full max-w-sm text-center">
+              <h2 className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 mb-2">Final Scouting Report</h2>
+              <h1 className="text-5xl font-black mb-10">{score} PTS</h1>
+              <div className="flex flex-col gap-3">
+                <button onClick={restartGame} className="w-full py-4 border border-zinc-700 hover:bg-zinc-800 transition font-bold uppercase text-[10px] tracking-widest">Restart Session</button>
+                <button onClick={shareScore} className="w-full py-4 bg-[#1DA1F2] hover:bg-blue-600 transition font-bold uppercase text-[10px] tracking-widest">Share on X</button>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] text-slate-400 tracking-widest">SKOR</p>
-              <p className="font-black text-2xl text-emerald-400">{score}</p>
-            </div>
-          </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Oyuncu Kartı */}
-          <div className="text-center mb-8 p-6 bg-slate-900 rounded-xl border border-slate-800 shadow-2xl">
-            <img src={currentPlayer.photo} className="w-28 h-28 rounded-full mx-auto border-4 border-orange-500 mb-4 object-cover bg-slate-800" />
-            <h1 className="text-2xl font-black">{currentPlayer.name}</h1>
-            <p className="text-xs text-slate-400 mt-1 uppercase">{currentPlayer.team} | {currentPlayer.pos}</p>
-            <div className="flex gap-3 mt-6 justify-center">
-              <button onClick={useHint} className="text-[11px] bg-slate-800 px-5 py-2 rounded-lg hover:bg-slate-700 transition font-bold uppercase">İPUCU</button>
-              <button onClick={nextPlayer} className="text-[11px] bg-orange-600 px-5 py-2 rounded-lg hover:bg-orange-700 transition font-bold uppercase">PAS GEÇ</button>
-            </div>
-          </div>
+      {/* Üst Panel: Can, Progress, Skor */}
+      <div className="w-full max-w-md flex justify-between items-center mb-8 px-2">
+        <div className="flex gap-2">{[...Array(3)].map((_, i) => <span key={i} className={i < lives ? "opacity-100" : "opacity-10"}>🏀</span>)}</div>
+        <div className="text-center"><p className="text-[8px] text-zinc-500 uppercase tracking-widest">Progress</p><h2 className="text-sm font-bold">{gameCount}/30</h2></div>
+        <div className="text-right"><p className="text-[8px] text-zinc-500 uppercase tracking-widest">Score</p><h2 className="text-xl font-black">{score}</h2></div>
+      </div>
 
-          {/* Grid */}
-          <div className="grid grid-cols-5 gap-2">
-            {BINGO_CATEGORIES.map((cat, index) => {
-              const filledPlayer = filledCells[cat];
-              const isHighlighted = highlightedCategory === cat;
-              return (
-                <motion.button
-                  key={index}
-                  onClick={() => !filledPlayer && handleCategoryClick(cat)}
-                  className={`aspect-square p-1 border-2 text-[8px] font-bold rounded-xl flex flex-col items-center justify-center transition-all ${filledPlayer ? "bg-emerald-900 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]" : isHighlighted ? "bg-orange-600 border-orange-400 animate-pulse scale-105 shadow-[0_0_20px_rgba(234,88,12,0.6)]" : "bg-slate-950 border-slate-800 hover:border-slate-700"}`}>
-                  {filledPlayer ? <img src={filledPlayer.photo} className="w-9 h-9 rounded-full mb-1 object-cover" /> : <><span className="text-xl mb-1">{CATEGORY_ICONS[cat] || "🏀"}</span><span className="truncate w-full uppercase">{cat}</span></>}
-                </motion.button>
-              );
-            })}
-          </div>
+      {/* Oyuncu Kartı */}
+      <div className="w-full max-w-md bg-[#111] border border-[#222] p-8 rounded-3xl mb-8 text-center">
+        <h1 className="text-3xl font-black uppercase tracking-tighter mb-1">{player.name}</h1>
+        <div className="flex gap-3 justify-center mt-6">
+          <button onClick={() => { const h = CATEGORIES.find(c => !filled[c.id] && validateInteraction(player, c.id)); if(h) { setHintCat(h.id); setTimeout(()=>setHintCat(null), 2000); }}} className="bg-[#1a1a1a] px-8 py-3 rounded-2xl text-[10px] font-bold uppercase hover:bg-[#222]">Hint</button>
+          <button onClick={() => { if(skip > 0) { setSkip(s => s - 1); nextTurn(); }}} className="bg-orange-600 px-8 py-3 rounded-2xl text-[10px] font-bold uppercase">Skip ({skip})</button>
         </div>
-      )}
+      </div>
+
+      {/* Grid */}
+      <div className="grid grid-cols-4 gap-2 w-full max-w-md">
+        {CATEGORIES.map((cat) => (
+          <motion.button
+            key={cat.id}
+            whileHover={{ scale: 1.05 }}
+            onClick={() => handleAction(cat.id)}
+            className={`h-20 rounded-2xl border flex flex-col items-center justify-center p-1 transition-all ${
+              filled[cat.id] ? "bg-emerald-900 border-emerald-700" : 
+              errorCat === cat.id ? "bg-red-900 border-red-700 animate-pulse" :
+              hintCat === cat.id ? "bg-orange-700 border-orange-500" :
+              "bg-[#111] border-[#222] hover:border-zinc-700"
+            }`}
+          >
+            {filled[cat.id] ? (
+              <span className="text-[8px] font-bold uppercase leading-none">{filled[cat.id].split(' ').pop()}</span>
+            ) : (
+              <span className="text-[9px] font-black uppercase leading-tight text-zinc-500">{cat.label}</span>
+            )}
+          </motion.button>
+        ))}
+      </div>
     </div>
   );
 };
