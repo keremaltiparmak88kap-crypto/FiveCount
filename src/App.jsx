@@ -2,19 +2,29 @@ import React, { useState,useEffect } from 'react';
 import MainLayout from './MainLayout'; // Az önce oluşturduğumuz layout
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from './store';
-import { Search, Key, Brain, Clipboard, TrendingUp, BarChart3, Target, LayoutGrid, Eye, Trophy, Shirt, Tags  } from 'lucide-react';
+import { generateTag } from './store';
+import { Search, Key, Brain, Clipboard, TrendingUp, BarChart3, Target, LayoutGrid, Eye, Trophy, Shirt, Tags, Crosshair, Crown, ListChecks, Users  } from 'lucide-react';
 import ManagerGame from './ManagerGame';
 import CareerGame from './CareerGame';
 import TriviaGame from './TriviaGame';
 import BingoGame from './BingoGame';
 import MissingGame from './MissingGame';
-import TeamGrid from './TeamGrid';
+import TeamGrid, { SUPPORTED_TEAM_KEYS } from './TeamGrid';
 import CourtCode from './CourtCode';
 import FindTeam from './FindTeam';
 import Footer from './Footer'; 
 import DraftRoulette from './DraftRoulette';
 import JerseyGuess from './JerseyGuess';
 import MatchGame from './MatchGame';
+import ThreePointLegend from './ThreePointLegend';
+import Leaderboard from './Leaderboard';
+import Achievements from './Achievements';
+import { ACHIEVEMENTS } from './achievementsData';
+import DailyQuests from './DailyQuests';
+import { getTodaysQuests } from './dailyQuestsData';
+import Friends from './Friends';
+import { auth } from './firebaseConfig';
+import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { PLAYERS } from './nbaData';// Yeni bileşeni import et
 // --- SABİT TANIMLAMALAR ---
 const DAILY_PLAYER = {
@@ -138,20 +148,42 @@ const GAMES = [
   { id: "find", label: "FIND TEAM", desc: "Spot the team behind a set of visual clues", icon: "Eye" },
   { id: "draft", label: "DRAFT ROUL.", desc: "Spin the wheel for a random draft pick", icon: "Trophy", isNew: true },
   { id: "jersey", label: "JERSEY #", desc: "Identify the player from their jersey number", icon: "Shirt", isNew: true },
-  { id: "match", label: "TAG MATCH", desc: "Tag each player with the trait that fits them", icon: "Tags" }
+  { id: "match", label: "TAG MATCH", desc: "Tag each player with the trait that fits them", icon: "Tags" },
+  { id: "threes", label: "3PT LEGEND", desc: "Build your player, climb the ladder, beat Curry", icon: "Crosshair", isNew: true }
 ];
 
-const GAME_ICONS = { Search, Key, Brain, Clipboard, BarChart3, Target, LayoutGrid, Eye, Trophy, Shirt, Tags };
+const GAME_ICONS = { Search, Key, Brain, Clipboard, BarChart3, Target, LayoutGrid, Eye, Trophy, Shirt, Tags, Crosshair, Crown };
 
 // --- ANA BİLEŞEN ---
 function App() {
-  const { username, setUsername, totalScore, rank, bestScores } = useGameStore();
+  const { username, setUsername, totalScore, rank, bestScores, setUid, usernameHydrated, hydrateUsername, character, streak, checkAndUpdateStreak, uid } = useGameStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentGame, setCurrentGame] = useState("hub");
   const [doorOpen, setDoorOpen] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [recentGames, setRecentGames] = useState([]);
+  const [onboardingName, setOnboardingName] = useState("");
+
+  // Firebase anonim giriş — leaderboard'a skor yazabilmek için her oyuncuya benzersiz bir ID lazım
+  useEffect(() => {
+    hydrateUsername(); // localStorage'da kayıtlı kullanıcı adı var mı bak
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUid(user.uid);
+      } else {
+        signInAnonymously(auth).catch((e) => console.warn("Firebase anonymous sign-in failed:", e));
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // uid ve kullanıcı adı hazır olduğunda giriş serisini (streak) kontrol et/güncelle
+  useEffect(() => {
+    if (uid && username) {
+      checkAndUpdateStreak();
+    }
+  }, [uid, username]);
 
   // "Son oynananlar" için localStorage'dan oku
   useEffect(() => {
@@ -163,6 +195,9 @@ function App() {
 
   // Bugünün öne çıkan oyunu (gün bazlı sabit, her gün değişir)
   const todaysPickId = GAMES[new Date().getDate() % GAMES.length].id;
+
+  // Kaç rozet açılmış (banner'da göstermek için)
+  const unlockedAchievements = ACHIEVEMENTS.filter((a) => a.check({ totalScore, bestScores, character, streak })).length;
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000);
@@ -213,6 +248,38 @@ function App() {
               />
               <p className="mt-4 text-[10px] tracking-[0.5em] text-white/50 font-mono">INITIALIZING FIVECOURT_OS...</p>
             </motion.div>
+          ) : usernameHydrated && !username ? (
+            <motion.div
+              key="onboarding"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="fixed inset-0 z-50 bg-[#060608] flex flex-col items-center justify-center p-8"
+            >
+              <img src="/logo.png" alt="FiveCourt" className="w-24 mb-8 rounded-2xl" />
+              <h1 className="text-2xl font-black italic tracking-tighter mb-1 text-center">
+                WHAT SHOULD WE <span className="text-orange-500">CALL YOU?</span>
+              </h1>
+              <p className="text-[11px] text-white/40 uppercase tracking-widest mb-8 text-center">
+                This is the name that'll show up on the leaderboard
+              </p>
+              <div className="w-full max-w-xs space-y-3">
+                <input
+                  autoFocus
+                  value={onboardingName}
+                  onChange={(e) => setOnboardingName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && onboardingName.trim()) setUsername(onboardingName); }}
+                  maxLength={20}
+                  placeholder="e.g. Ice"
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl p-4 text-white text-center focus:border-orange-500 outline-none"
+                />
+                <button
+                  onClick={() => onboardingName.trim() && setUsername(onboardingName)}
+                  disabled={!onboardingName.trim()}
+                  className="w-full bg-orange-500 disabled:bg-zinc-800 disabled:text-white/30 text-black font-black py-4 rounded-xl uppercase tracking-widest transition-colors"
+                >
+                  Enter FiveCourt
+                </button>
+              </div>
+            </motion.div>
           ) : (
             <motion.div key="main" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-grow">
               {currentGame === "hub" ? (
@@ -225,11 +292,22 @@ function App() {
                       className="mx-auto w-32 sm:w-40 mb-4 rounded-3xl drop-shadow-[0_0_25px_rgba(249,115,22,0.25)]"
                     />
 
-                    <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+                    <div className="inline-flex items-center gap-2 mb-1 px-3 py-1 rounded-full bg-white/5 border border-white/10">
                       <span className="text-[9px] uppercase tracking-[0.2em] text-orange-400 font-bold">{rank}</span>
                       <span className="w-1 h-1 rounded-full bg-white/20" />
                       <span className="text-[9px] uppercase tracking-[0.2em] text-white/50">{totalScore.toLocaleString()} PTS</span>
+                      {streak > 0 && (
+                        <>
+                          <span className="w-1 h-1 rounded-full bg-white/20" />
+                          <span className="text-[9px] uppercase tracking-[0.2em] text-orange-400 font-bold">🔥 {streak}</span>
+                        </>
+                      )}
                     </div>
+                    {username && (
+                      <p className="text-[9px] text-white/25 mb-5 font-mono">
+                        {username}<span className="text-white/15">#{generateTag(uid)}</span>
+                      </p>
+                    )}
 
                     <div className="w-full overflow-hidden bg-zinc-900 border-y border-white/5 py-2 mb-4">
                       <motion.div 
@@ -248,6 +326,76 @@ function App() {
                     </div>
                   </div>
                   
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => handleGameSelect("leaderboard")}
+                      className="group relative flex flex-col items-start gap-2 p-3 rounded-2xl overflow-hidden
+                                 bg-gradient-to-br from-orange-500/15 via-orange-500/5 to-transparent
+                                 border border-orange-500/30 hover:border-orange-500/60
+                                 transition-all duration-300 hover:-translate-y-0.5"
+                    >
+                      <div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full bg-orange-500/10 blur-2xl group-hover:bg-orange-500/20 transition-all duration-300" />
+                      <div className="relative w-8 h-8 rounded-lg flex items-center justify-center bg-orange-500/15 border border-orange-500/40 text-orange-400">
+                        <Crown size={16} />
+                      </div>
+                      <div className="relative text-left">
+                        <span className="block font-black text-[11px] leading-tight tracking-tighter text-white">LEADERBOARD</span>
+                        <span className="block text-[9px] text-white/40">Your rank</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleGameSelect("achievements")}
+                      className="group relative flex flex-col items-start gap-2 p-3 rounded-2xl overflow-hidden
+                                 bg-gradient-to-br from-purple-500/15 via-purple-500/5 to-transparent
+                                 border border-purple-500/30 hover:border-purple-500/60
+                                 transition-all duration-300 hover:-translate-y-0.5"
+                    >
+                      <div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full bg-purple-500/10 blur-2xl group-hover:bg-purple-500/20 transition-all duration-300" />
+                      <div className="relative w-8 h-8 rounded-lg flex items-center justify-center bg-purple-500/15 border border-purple-500/40 text-purple-300">
+                        <Trophy size={16} />
+                      </div>
+                      <div className="relative text-left">
+                        <span className="block font-black text-[11px] leading-tight tracking-tighter text-white">BADGES</span>
+                        <span className="block text-[9px] text-white/40">{unlockedAchievements}/{ACHIEVEMENTS.length} unlocked</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleGameSelect("quests")}
+                      className="group relative flex flex-col items-start gap-2 p-3 rounded-2xl overflow-hidden
+                                 bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-transparent
+                                 border border-emerald-500/30 hover:border-emerald-500/60
+                                 transition-all duration-300 hover:-translate-y-0.5"
+                    >
+                      <div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full bg-emerald-500/10 blur-2xl group-hover:bg-emerald-500/20 transition-all duration-300" />
+                      <div className="relative w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/15 border border-emerald-500/40 text-emerald-300">
+                        <ListChecks size={16} />
+                      </div>
+                      <div className="relative text-left">
+                        <span className="block font-black text-[11px] leading-tight tracking-tighter text-white">QUESTS</span>
+                        <span className="block text-[9px] text-white/40">3 today</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleGameSelect("friends")}
+                      className="group relative flex flex-col items-start gap-2 p-3 rounded-2xl overflow-hidden
+                                 bg-gradient-to-br from-blue-500/15 via-blue-500/5 to-transparent
+                                 border border-blue-500/30 hover:border-blue-500/60
+                                 transition-all duration-300 hover:-translate-y-0.5"
+                    >
+                      <div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full bg-blue-500/10 blur-2xl group-hover:bg-blue-500/20 transition-all duration-300" />
+                      <div className="relative w-8 h-8 rounded-lg flex items-center justify-center bg-blue-500/15 border border-blue-500/40 text-blue-300">
+                        <Users size={16} />
+                      </div>
+                      <div className="relative text-left">
+                        <span className="block font-black text-[11px] leading-tight tracking-tighter text-white">FRIENDS</span>
+                        <span className="block text-[9px] text-white/40">Compete together</span>
+                      </div>
+                    </button>
+                  </div>
+
                   {recentGames.length > 0 && (
                     <div className="px-2 mb-1">
                       <p className="text-[9px] uppercase tracking-[0.3em] text-white/30 mb-2">Recently played</p>
@@ -342,11 +490,31 @@ function App() {
                   {currentGame === "draft" && <DraftRoulette />}
                   {currentGame === "jersey" && <JerseyGuess />}
                   {currentGame === "match" && <MatchGame />}
+                  {currentGame === "threes" && <ThreePointLegend />}
+                  {currentGame === "leaderboard" && <Leaderboard />}
+                  {currentGame === "achievements" && <Achievements />}
+                  {currentGame === "quests" && <DailyQuests />}
+                  {currentGame === "friends" && <Friends />}
                   {/* Grid mantığın */}
                   {currentGame === "grid" && !selectedTeam && (
-                    <div className="text-center"><h2 className="text-2xl font-black mb-8 uppercase">TAKIMINI SEÇ</h2>
+                    <div className="text-center">
+                      <h2 className="text-2xl font-black mb-2 uppercase">TAKIMINI SEÇ</h2>
+                      <p className="text-[10px] text-white/30 uppercase tracking-widest mb-8">5 takım · her birinin kendi oyuncu kadrosu var</p>
                       <div className="grid grid-cols-2 gap-4">
-                        {Object.keys(ALL_TEAMS).map(key => <button key={key} onClick={() => setSelectedTeam(key)} className="h-24 bg-zinc-900 rounded-2xl font-black hover:bg-orange-600">{ALL_TEAMS[key].name}</button>)}
+                        {SUPPORTED_TEAM_KEYS.map(key => (
+                          <button
+                            key={key}
+                            onClick={() => setSelectedTeam(key)}
+                            className="relative h-24 bg-zinc-900 border border-white/10 rounded-2xl font-black overflow-hidden hover:border-orange-500/50 hover:bg-orange-600/10 transition-all flex items-center justify-center"
+                          >
+                            <img
+                              src={ALL_TEAMS[key].logo}
+                              alt=""
+                              className="absolute top-2 right-2 w-8 h-8 object-contain opacity-70"
+                            />
+                            <span className="relative z-10">{ALL_TEAMS[key].name}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}

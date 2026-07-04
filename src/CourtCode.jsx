@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShareButton } from './ShareButton'; // Dosyan aynı klasördeyse böyle
 import { useGameStore } from './store';
@@ -6,6 +6,7 @@ const CourtCode = () => {
   const addScore = useGameStore((state) => state.addScore);
   const target = "ALPEREN";
   const targetName = "ALPEREN ŞENGÜN";
+  const containerRef = useRef(null);
   
   const [guesses, setGuesses] = useState(Array(5).fill(""));
   const [currentGuess, setCurrentGuess] = useState("");
@@ -24,6 +25,11 @@ const CourtCode = () => {
       setTimeLeft(`${Math.floor((diff / (1000 * 60 * 60)) % 24)}h ${Math.floor((diff / (1000 * 60)) % 60)}m ${Math.floor((diff / 1000) % 60)}s`);
     }, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Sayfa açılır açılmaz klavye girişine hazır olsun (önceden ekrana tıklaman gerekiyordu)
+  useEffect(() => {
+    containerRef.current?.focus();
   }, []);
 
   const handleKeyDown = (e) => {
@@ -49,7 +55,7 @@ const CourtCode = () => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-6 p-6 outline-none" onKeyDown={handleKeyDown} tabIndex="0">
+    <div className="flex flex-col items-center gap-6 p-6 outline-none" onKeyDown={handleKeyDown} tabIndex="0" ref={containerRef}>
       
       {/* BAŞLIK HİYERARŞİSİ */}
       <div className="text-center mb-2">
@@ -92,7 +98,7 @@ const CourtCode = () => {
             <h2 className="text-emerald-500 font-black text-lg">CONGRATULATIONS</h2>
             <p className="text-white text-2xl font-black italic">{targetName}</p>
             <p className="text-orange-500 font-bold mt-2">TOTAL SCORE: {score}</p>
-            <ShareButton gameName="COURT CODE" score={450} />
+            <ShareButton gameName="COURT CODE" score={score} />
           </motion.div>
         )}
       </AnimatePresence>

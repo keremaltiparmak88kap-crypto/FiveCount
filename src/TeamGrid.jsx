@@ -66,6 +66,10 @@ const pickRandom = (arr, count) => {
   return shuffled.slice(0, count);
 };
 
+// Bu oyun şu an sadece bu 5 takımın oyuncu/trait verisine sahip.
+// App.jsx'teki takım seçim ekranı bu listeyi kullanarak sadece çalışan takımları gösteriyor.
+export const SUPPORTED_TEAM_KEYS = ["LAL", "GSW", "BOS", "CHI", "MIA"];
+
 const TeamGrid = ({ teamKey, onBack }) => {
   const addScore = useGameStore((state) => state.addScore);
   // Oyun State'leri

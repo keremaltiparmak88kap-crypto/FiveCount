@@ -74,6 +74,7 @@ const FindTeam = ({ teams }) => {
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleGuess(); }}
               placeholder="Type team name..."
               className="bg-black border border-white/20 p-4 rounded-xl text-center text-white"
             />
