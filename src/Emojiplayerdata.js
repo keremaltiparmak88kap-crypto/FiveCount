@@ -1,5 +1,5 @@
 import { getDailySubset } from './dailyRotation';
- 
+
 export const EMOJI_POOL = [
   { name: "Stephen Curry", emojis: ["🍳", "3️⃣", "🎯"], clue: "Chef known for deep range" },
   { name: "LeBron James", emojis: ["👑", "🚂", "💪"], clue: "The King" },
@@ -26,6 +26,5 @@ export const EMOJI_POOL = [
   { name: "Kawhi Leonard", emojis: ["🤫", "🐾", "🛡️"], clue: "The Klaw, quiet two-way star" },
   { name: "Jayson Tatum", emojis: ["☘️", "🍀", "0️⃣"], clue: "Boston's modern scoring wing" },
 ];
- 
+
 export const getTodaysEmojiRounds = () => getDailySubset(EMOJI_POOL, 6);
- 

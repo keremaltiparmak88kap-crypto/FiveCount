@@ -1,5 +1,5 @@
 import { getDailySubset } from './dailyRotation';
- 
+
 // Telif hakkı sorunu yaşamamak için gerçek fotoğraf yerine stilize, tek renkli silüetler
 // kullanılıyor. Ayırt edici bilgi olarak forma numarası + takım rengi + poz veriliyor.
 export const SILHOUETTE_POOL = [
@@ -24,6 +24,5 @@ export const SILHOUETTE_POOL = [
   { name: "Jayson Tatum", team: "BOS", color: "#007A33", number: 0, pose: "dunk" },
   { name: "Anthony Edwards", team: "MIN", color: "#0C2340", number: 5, pose: "dunk" },
 ];
- 
+
 export const getTodaysSilhouettes = () => getDailySubset(SILHOUETTE_POOL, 6);
- 

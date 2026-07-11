@@ -1,6 +1,5 @@
-
 import { getDailyItem, getDailySubset } from './dailyRotation';
- 
+
 // Curated, yaklaşık gerçek kariyer istatistikleri. Bu bir eğlence/trivia oyunu olduğu için
 // rakamlar genel bilinen değerlere yakın tutuldu (kesin/güncel istatistik kaynağı değildir).
 export const HL_PLAYERS = [
@@ -30,17 +29,16 @@ export const HL_PLAYERS = [
   { name: "Russell Westbrook", ppg: 21.6, championships: 0, allStar: 9, seasons: 16 },
   { name: "James Harden", ppg: 24.9, championships: 0, allStar: 10, seasons: 15 },
 ];
- 
+
 export const HL_CATEGORIES = [
   { id: "ppg", label: "Career PPG", suffix: "PPG", format: (v) => v.toFixed(1) },
   { id: "championships", label: "Championships Won", suffix: "titles", format: (v) => String(v) },
   { id: "allStar", label: "All-Star Selections", suffix: "selections", format: (v) => String(v) },
   { id: "seasons", label: "Seasons Played", suffix: "seasons", format: (v) => String(v) },
 ];
- 
+
 // Günün kategorisi — her gün 4 kategoriden biri (herkese aynı gün aynı kategori).
 export const getTodaysCategory = () => getDailyItem(HL_CATEGORIES);
- 
+
 // Günün oyuncu sırası — büyük havuzdan her gün farklı bir sıralı 12'lik dizi.
 export const getTodaysSequence = () => getDailySubset(HL_PLAYERS, 12);
- 
