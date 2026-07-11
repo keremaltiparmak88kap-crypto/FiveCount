@@ -101,4 +101,3 @@ export const ACHIEVEMENTS = [
     check: (s) => s.totalScore >= 5000
   }
 ];
- 
