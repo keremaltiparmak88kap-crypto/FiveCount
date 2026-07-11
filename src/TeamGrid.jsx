@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from './store';
+import { db } from './firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 
 // Each player's trait / defining characteristic
 const PLAYER_TRAITS = {
@@ -66,9 +68,12 @@ const pickRandom = (arr, count) => {
   return shuffled.slice(0, count);
 };
 
-// Bu oyun şu an sadece bu 5 takımın oyuncu/trait verisine sahip.
-// App.jsx'teki takım seçim ekranı bu listeyi kullanarak sadece çalışan takımları gösteriyor.
-export const SUPPORTED_TEAM_KEYS = ["LAL", "GSW", "BOS", "CHI", "MIA"];
+// Bu 5 takımın elle yazılmış, zengin lakapları var (aşağıdaki PLAYER_TRAITS).
+// Diğer 25 takım için Cloud Function'ın her gün çektiği canlı kadro kullanılıyor
+// (pozisyon + forma numarası bazlı etiketlerle).
+const CURATED_TEAM_KEYS = ["LAL", "GSW", "BOS", "CHI", "MIA"];
+
+const todayStr = () => new Date().toISOString().slice(0, 10);
 
 const TeamGrid = ({ teamKey, onBack }) => {
   const addScore = useGameStore((state) => state.addScore);
@@ -84,26 +89,65 @@ const TeamGrid = ({ teamKey, onBack }) => {
 
   // İstatistik State'leri (Özellik 3)
   const [stats, setStats] = useState({ correct: 0, wrong: 0, hints: 0, time: 0 });
+  const [score, setScore] = useState(0);
   const timerRef = useRef(null);
 
-  const initGame = (key) => {
-    const fullRoster = ALL_TEAMS[key] || [];
-    const shuffled = [...fullRoster].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 12);
-    
-    setBoxes(selected.map(p => ({ player: p, trait: PLAYER_TRAITS[p] || "N/A", solved: false })));
-    setTarget(selected[Math.floor(Math.random() * selected.length)]);
-    
-    // Reset
-    setLives(3); setSkipCount(5); setHintUsed(false); setWrongIdx(null); setHighlightIdx(null);
-    setGameStatus("playing");
-    setStats({ correct: 0, wrong: 0, hints: 0, time: 0 });
-    
-    // Zamanlayıcıyı Başlat
+  const [loadingRoster, setLoadingRoster] = useState(false);
+  const [rosterError, setRosterError] = useState(null);
+
+  const startRoundTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setStats(prev => ({ ...prev, time: prev.time + 1 }));
     }, 1000);
+  };
+
+  const resetRoundState = () => {
+    setLives(3); setSkipCount(5); setHintUsed(false); setWrongIdx(null); setHighlightIdx(null);
+    setGameStatus("playing");
+    setStats({ correct: 0, wrong: 0, hints: 0, time: 0 });
+    setScore(0);
+    startRoundTimer();
+  };
+
+  const initGame = async (key) => {
+    setRosterError(null);
+
+    // --- CURATED TAKIM (LAL/GSW/BOS/CHI/MIA) — elle yazılmış lakaplarla, senkron ---
+    if (CURATED_TEAM_KEYS.includes(key)) {
+      const fullRoster = ALL_TEAMS[key] || [];
+      const shuffled = [...fullRoster].sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, 12);
+
+      setBoxes(selected.map(p => ({ player: p, trait: PLAYER_TRAITS[p] || "N/A", solved: false })));
+      setTarget(selected[Math.floor(Math.random() * selected.length)]);
+      resetRoundState();
+      return;
+    }
+
+    // --- CANLI TAKIM (diğer 25) — Cloud Function'ın her gün çektiği gerçek kadro ---
+    setLoadingRoster(true);
+    try {
+      const snap = await getDoc(doc(db, "dailyTeamRosters", todayStr()));
+      const roster = snap.exists() ? (snap.data().teams?.[key] || []) : [];
+
+      if (roster.length === 0) {
+        setRosterError("Bu takım için bugün canlı kadro verisi henüz gelmedi. Az sonra tekrar dene.");
+        setLoadingRoster(false);
+        return;
+      }
+
+      const shuffled = [...roster].sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, Math.min(12, shuffled.length));
+
+      setBoxes(selected.map(p => ({ player: p.name, trait: p.trait, solved: false })));
+      setTarget(selected[Math.floor(Math.random() * selected.length)].name);
+      resetRoundState();
+    } catch (e) {
+      setRosterError("Kadro yüklenirken bir hata oluştu. Tekrar dene.");
+    } finally {
+      setLoadingRoster(false);
+    }
   };
 
   useEffect(() => { 
@@ -121,6 +165,7 @@ const TeamGrid = ({ teamKey, onBack }) => {
     if (boxes[idx].player === target) {
       setStats(prev => ({ ...prev, correct: prev.correct + 1 }));
       addScore(50, "grid");
+      setScore(s => s + 50);
       const newBoxes = [...boxes];
       newBoxes[idx].solved = true;
       setBoxes(newBoxes);
@@ -143,41 +188,89 @@ const TeamGrid = ({ teamKey, onBack }) => {
   // Zaman Formatlayıcı (00:00)
   const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
+  if (loadingRoster) {
+    return (
+      <div className="max-w-4xl mx-auto p-8 text-white min-h-screen bg-black flex items-center justify-center">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-white/30">Loading today's roster…</p>
+      </div>
+    );
+  }
+
+  if (rosterError) {
+    return (
+      <div className="max-w-4xl mx-auto p-8 text-white min-h-screen bg-black flex flex-col items-center justify-center text-center gap-6">
+        <p className="text-sm text-white/50 max-w-xs">{rosterError}</p>
+        <div className="flex gap-3">
+          <button onClick={() => initGame(teamKey)} className="bg-orange-500 text-black px-8 py-3 rounded-full font-black uppercase text-xs tracking-widest">Try Again</button>
+          <button onClick={onBack} className="border border-white/20 px-8 py-3 rounded-full font-black uppercase text-xs tracking-widest hover:bg-white/5">Back</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-8 text-white min-h-screen bg-black font-sans relative overflow-hidden">
       
-      {/* OYUN SONU PANELİ (Özellik 3) */}
+      {/* OYUN SONU PANELİ */}
       <AnimatePresence>
         {gameStatus !== "playing" && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 1, scale: 1 }}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-10 text-center"
+            className="fixed inset-0 z-50 bg-[#060608]/95 flex items-center justify-center p-6"
           >
-            <h2 className={`text-6xl font-black mb-2 ${gameStatus === "winner" ? "text-green-500" : "text-red-500"}`}>
-              {gameStatus === "winner" ? "MISSION ACCOMPLISHED" : "MISSION FAILED"}
-            </h2>
-            <p className="text-neutral-500 uppercase tracking-[0.3em] mb-12">Performance Summary</p>
-            
-            <div className="grid grid-cols-2 gap-8 mb-16 w-full max-w-md">
-              <div className="bg-neutral-900 p-6 rounded-2xl border border-white/5">
-                <p className="text-[10px] text-neutral-500 uppercase mb-1">Total Time</p>
-                <p className="text-2xl font-bold">{formatTime(stats.time)}</p>
-              </div>
-              <div className="bg-neutral-900 p-6 rounded-2xl border border-white/5">
-                <p className="text-[10px] text-neutral-500 uppercase mb-1">Accuracy</p>
-                <p className="text-2xl font-bold">%{Math.round((stats.correct / (stats.correct + stats.wrong || 1)) * 100)}</p>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => initGame(teamKey)}
-              className="bg-white text-black px-12 py-4 rounded-full font-black uppercase tracking-widest hover:scale-105 transition-transform"
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="relative w-full max-w-sm rounded-[32px] p-10 text-center overflow-hidden
+                         bg-gradient-to-b from-white/[0.06] to-white/[0.015] border border-white/10
+                         shadow-[0_8px_40px_-12px_rgba(0,0,0,0.6)]"
             >
-              Play Again
-            </button>
-            <button onClick={onBack} className="mt-6 text-neutral-500 text-xs uppercase tracking-widest hover:text-white transition">Exit to Menu</button>
+              <div className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full bg-orange-500/10 blur-3xl" />
+
+              <p className="relative text-[10px] uppercase tracking-[0.4em] text-white/40 mb-2">
+                {gameStatus === "winner" ? "Roster Complete" : "Session Ended"}
+              </p>
+              <h1 className="relative text-5xl font-black mb-1 text-orange-500">
+                {score} <span className="text-white text-2xl align-top">PTS</span>
+              </h1>
+              <p className="relative text-[11px] text-white/30 uppercase tracking-widest mb-8">
+                {teamKey} · Team Grid
+              </p>
+
+              <div className="relative grid grid-cols-2 gap-3 mb-8">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                  <p className="text-[9px] text-white/35 uppercase tracking-widest mb-1">Time</p>
+                  <p className="text-xl font-black">{formatTime(stats.time)}</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                  <p className="text-[9px] text-white/35 uppercase tracking-widest mb-1">Accuracy</p>
+                  <p className="text-xl font-black">{Math.round((stats.correct / (stats.correct + stats.wrong || 1)) * 100)}%</p>
+                </div>
+              </div>
+
+              <div className="relative flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    const text = `I just scored ${score} points in FiveCourt's Team Grid! Can you beat me?`;
+                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+                  }}
+                  className="w-full py-4 rounded-2xl bg-[#1DA1F2] hover:bg-blue-500 transition-colors text-white font-black uppercase text-[10px] tracking-widest"
+                >
+                  Share on X
+                </button>
+                <button
+                  onClick={() => initGame(teamKey)}
+                  className="w-full py-4 rounded-2xl border border-white/15 hover:bg-white/5 transition-colors font-black uppercase text-[10px] tracking-widest"
+                >
+                  Play Again
+                </button>
+                <button onClick={onBack} className="text-white/30 hover:text-white text-[10px] uppercase tracking-widest transition-colors mt-1">
+                  Exit to Menu
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

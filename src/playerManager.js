@@ -55,6 +55,26 @@ export const getPlayerCategory = (player) => player.category;
 
 export const getRandomPlayer = () => PLAYERS[Math.floor(Math.random() * PLAYERS.length)];
 
+// Basit seed'lenmiş karıştırma — dailyRotation.js'teki mantığın aynısı, bu dosya bağımsız kalsın diye tekrar tanımlandı.
+const seededShuffle = (array, seed) => {
+  const arr = [...array];
+  let s = seed || 1;
+  for (let i = arr.length - 1; i > 0; i--) {
+    s = (s * 9301 + 49297) % 233280;
+    const j = Math.floor((s / 233280) * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
+// Günün oyuncu sırası — HERKESE aynı gün aynı sırayla, aynı 49 oyuncu gelir (UTC gece
+// yarısında değişir). Bir sonraki gün tamamen farklı bir sırayla karışır, bu yüzden bir
+// oyun içinde (30 tur) hiç tekrar olmaz ve günler arasında da tekrar hissi oluşmaz.
+export const getDailyPlayerSequence = () => {
+  const daysSinceEpoch = Math.floor(Date.now() / 86400000);
+  return seededShuffle(PLAYERS, daysSinceEpoch + 1);
+};
+
 // Bu fonksiyon Bingo'da kategoriye tıklandığında oyuncunun uygunluğunu denetler
 export const validateInteraction = (player, category) => {
   return (

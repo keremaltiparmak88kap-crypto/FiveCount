@@ -30,7 +30,15 @@ const MAX_POINTS_PER_EVENT = {
   match: 50,
   manager: 1200,
   threes: 5200,  // GOAT (final boss) bonusu dahil en yüksek meşru tek seferlik puan
-  jersey: 300
+  jersey: 300,
+  hoopgrid: 1200, // 9 hücrenin tamamı en nadir cevaplarla doldurulursa bile ~1030 civarı, pay bırakıldı
+  box2box: 1000,  // 9 kutu x 100 puan = 900, pay bırakıldı
+  statline: 960,  // 8 round x 120 (max combo bonus) = 960
+  whoami: 840,    // 7 round x 120 (max clue+combo bonus) = 840
+  sneaker: 60,    // tek seferlik tasarım ödülü (50), pay bırakıldı
+  higherlower: 800, // uzun bir zincirde streak arttıkça puan katlanır, pay bırakıldı
+  silhouette: 700,  // 6 round x en yüksek olası puan (~110) civarı, pay bırakıldı
+  emojiplayer: 600  // 6 round x en yüksek olası puan (~120) civarı, pay bırakıldı
 };
 const DEFAULT_MAX_POINTS = 500; // gameId'siz (örn. görev ödülü) veya listede olmayan olaylar için
  

@@ -1,22 +1,10 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import MainLayout from './MainLayout'; // Az önce oluşturduğumuz layout
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from './store';
 import { generateTag } from './store';
-import { Search, Key, Brain, Clipboard, TrendingUp, BarChart3, Target, LayoutGrid, Eye, Trophy, Shirt, Tags, Crosshair, Crown, ListChecks, Users  } from 'lucide-react';
-import ManagerGame from './ManagerGame';
-import CareerGame from './CareerGame';
-import TriviaGame from './TriviaGame';
-import BingoGame from './BingoGame';
-import MissingGame from './MissingGame';
-import TeamGrid, { SUPPORTED_TEAM_KEYS } from './TeamGrid';
-import CourtCode from './CourtCode';
-import FindTeam from './FindTeam';
-import Footer from './Footer'; 
-import DraftRoulette from './DraftRoulette';
-import JerseyGuess from './JerseyGuess';
-import MatchGame from './MatchGame';
-import ThreePointLegend from './ThreePointLegend';
+import { Search, Key, Brain, Clipboard, TrendingUp, BarChart3, Target, LayoutGrid, Eye, Trophy, Shirt, Tags, Crosshair, Crown, ListChecks, Users, Boxes, BarChart, HelpCircle, Palette, ArrowUpDown, User, Smile  } from 'lucide-react';
+import Footer from './Footer';
 import Leaderboard from './Leaderboard';
 import Achievements from './Achievements';
 import { ACHIEVEMENTS } from './achievementsData';
@@ -26,6 +14,28 @@ import Friends from './Friends';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { PLAYERS } from './nbaData';// Yeni bileşeni import et
+
+// Oyun bileşenleri LAZY yükleniyor — hub açılışında sadece seçilen oyunun kodu indirilir,
+// diğer 15+ oyunun kodu ilk yüklemeye dahil olmaz. Bu, ilk açılış süresini önemli ölçüde kısaltır.
+const ManagerGame = lazy(() => import('./ManagerGame'));
+const CareerGame = lazy(() => import('./CareerGame'));
+const TriviaGame = lazy(() => import('./TriviaGame'));
+const BingoGame = lazy(() => import('./BingoGame'));
+const MissingGame = lazy(() => import('./MissingGame'));
+const TeamGrid = lazy(() => import('./TeamGrid'));
+const CourtCode = lazy(() => import('./CourtCode'));
+const FindTeam = lazy(() => import('./FindTeam'));
+const DraftRoulette = lazy(() => import('./DraftRoulette'));
+const JerseyGuess = lazy(() => import('./JerseyGuess'));
+const MatchGame = lazy(() => import('./MatchGame'));
+const ThreePointLegend = lazy(() => import('./ThreePointLegend'));
+const BasketballBox2BoxGame = lazy(() => import('./BasketballBox2BoxGame'));
+const StatLineGame = lazy(() => import('./StatLineGame'));
+const SneakerLab = lazy(() => import('./SneakerLab'));
+const WhoAmIGame = lazy(() => import('./WhoAmIGame'));
+const HigherOrLowerGame = lazy(() => import('./HigherOrLowerGame'));
+const SilhouetteGame = lazy(() => import('./SilhouetteGame'));
+const EmojiPlayerGame = lazy(() => import('./EmojiPlayerGame'));
 // --- SABİT TANIMLAMALAR ---
 const DAILY_PLAYER = {
   name: "Marcus 'The Flash' Jaxon",
@@ -149,10 +159,17 @@ const GAMES = [
   { id: "draft", label: "DRAFT ROUL.", desc: "Spin the wheel for a random draft pick", icon: "Trophy", isNew: true },
   { id: "jersey", label: "JERSEY #", desc: "Identify the player from their jersey number", icon: "Shirt", isNew: true },
   { id: "match", label: "TAG MATCH", desc: "Tag each player with the trait that fits them", icon: "Tags" },
-  { id: "threes", label: "3PT LEGEND", desc: "Build your player, climb the ladder, beat Curry", icon: "Crosshair", isNew: true }
+  { id: "threes", label: "3PT LEGEND", desc: "Build your player, climb the ladder, beat Curry", icon: "Crosshair", isNew: true },
+  { id: "box2box", label: "BOX2BOX", desc: "Match players to their team and category — daily grid", icon: "Boxes", isNew: true },
+  { id: "statline", label: "STAT LINE", desc: "Guess the player from a legendary box score", icon: "BarChart", isNew: true },
+  { id: "whoami", label: "WHO AM I", desc: "Reveal clues one by one and guess the player", icon: "HelpCircle", isNew: true },
+  { id: "sneaker", label: "SNEAKER LAB", desc: "Design your own signature basketball shoe", icon: "Palette", isNew: true },
+  { id: "higherlower", label: "HIGHER/LOWER", desc: "Chain matchups — guess if the next stat is higher or lower", icon: "ArrowUpDown", isNew: true },
+  { id: "silhouette", label: "SILHOUETTE", desc: "Guess the player from their stylized silhouette", icon: "User", isNew: true },
+  { id: "emojiplayer", label: "EMOJI PLAYER", desc: "Decode 3 emojis and guess the player", icon: "Smile", isNew: true }
 ];
 
-const GAME_ICONS = { Search, Key, Brain, Clipboard, BarChart3, Target, LayoutGrid, Eye, Trophy, Shirt, Tags, Crosshair, Crown };
+const GAME_ICONS = { Search, Key, Brain, Clipboard, BarChart3, Target, LayoutGrid, Eye, Trophy, Shirt, Tags, Crosshair, Crown, Boxes, BarChart, HelpCircle, Palette, ArrowUpDown, User, Smile };
 
 // --- ANA BİLEŞEN ---
 function App() {
@@ -479,29 +496,42 @@ function App() {
                     </h1>
                   </div>
                   
-                  {currentGame === "trivia" && <TriviaGame />}
-                  {currentGame === "manager" && <ManagerGame />}
-                  {currentGame === "career" && <CareerGame />}
-                  {currentGame === "missing" && <MissingGame />}
-                  {currentGame === "bingo" && <BingoGame />}
-                  {currentGame === "code" && <CourtCode />}
-                  {currentGame === "grid" && selectedTeam && <TeamGrid teamKey={selectedTeam} onBack={() => setSelectedTeam(null)} />}
-                  {currentGame === "find" && <FindTeam teams={ALL_TEAMS} />}
-                  {currentGame === "draft" && <DraftRoulette />}
-                  {currentGame === "jersey" && <JerseyGuess />}
-                  {currentGame === "match" && <MatchGame />}
-                  {currentGame === "threes" && <ThreePointLegend />}
-                  {currentGame === "leaderboard" && <Leaderboard />}
-                  {currentGame === "achievements" && <Achievements />}
-                  {currentGame === "quests" && <DailyQuests />}
-                  {currentGame === "friends" && <Friends />}
+                  <Suspense fallback={
+                    <div className="flex items-center justify-center py-24">
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-white/30 animate-pulse">Loading game…</p>
+                    </div>
+                  }>
+                    {currentGame === "trivia" && <TriviaGame />}
+                    {currentGame === "manager" && <ManagerGame />}
+                    {currentGame === "career" && <CareerGame />}
+                    {currentGame === "missing" && <MissingGame />}
+                    {currentGame === "bingo" && <BingoGame />}
+                    {currentGame === "code" && <CourtCode />}
+                    {currentGame === "grid" && selectedTeam && <TeamGrid teamKey={selectedTeam} onBack={() => setSelectedTeam(null)} />}
+                    {currentGame === "find" && <FindTeam teams={ALL_TEAMS} />}
+                    {currentGame === "draft" && <DraftRoulette />}
+                    {currentGame === "jersey" && <JerseyGuess />}
+                    {currentGame === "match" && <MatchGame />}
+                    {currentGame === "threes" && <ThreePointLegend />}
+                    {currentGame === "box2box" && <BasketballBox2BoxGame />}
+                    {currentGame === "statline" && <StatLineGame />}
+                    {currentGame === "whoami" && <WhoAmIGame />}
+                    {currentGame === "sneaker" && <SneakerLab />}
+                    {currentGame === "higherlower" && <HigherOrLowerGame />}
+                    {currentGame === "silhouette" && <SilhouetteGame />}
+                    {currentGame === "emojiplayer" && <EmojiPlayerGame />}
+                    {currentGame === "leaderboard" && <Leaderboard />}
+                    {currentGame === "achievements" && <Achievements />}
+                    {currentGame === "quests" && <DailyQuests />}
+                    {currentGame === "friends" && <Friends />}
+                  </Suspense>
                   {/* Grid mantığın */}
                   {currentGame === "grid" && !selectedTeam && (
                     <div className="text-center">
                       <h2 className="text-2xl font-black mb-2 uppercase">TAKIMINI SEÇ</h2>
-                      <p className="text-[10px] text-white/30 uppercase tracking-widest mb-8">5 takım · her birinin kendi oyuncu kadrosu var</p>
+                      <p className="text-[10px] text-white/30 uppercase tracking-widest mb-8">30 takım · kadrolar her gün güncelleniyor</p>
                       <div className="grid grid-cols-2 gap-4">
-                        {SUPPORTED_TEAM_KEYS.map(key => (
+                        {Object.keys(ALL_TEAMS).map(key => (
                           <button
                             key={key}
                             onClick={() => setSelectedTeam(key)}

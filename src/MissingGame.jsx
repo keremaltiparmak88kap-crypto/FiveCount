@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from './store';
+import { getDailyIndex } from './dailyRotation';
 
 // --- MAÇ VERİTABANI (20 MAÇ) ---
 const MATCH_POOL = [
@@ -23,12 +24,23 @@ const MATCH_POOL = [
   { id: 17, matchup: "UTA vs CHI", date: "1997 FINALS", home: "JAZZ", away: "BULLS", homePlayers: [{n:"Stockton", s:"15", r:"2", a:"8"}, {n:"Hornacek", s:"12", r:"3", a:"2"}, {n:"Russell", s:"10", r:"4", a:"1"}, {n:"Malone", s:"23", r:"10", a:"3"}, {n:"Ostertag", s:"4", r:"6", a:"0"}], awayPlayers: ["Harper", "Jordan", "Pippen", "Rodman", "Longley"], missing: "Ostertag", options: ["Ostertag", "Morris", "Carr", "Anderson"] },
   { id: 18, matchup: "GSW vs BOS", date: "2022 FINALS", home: "WARRIORS", away: "CELTICS", homePlayers: [{n:"Curry", s:"31", r:"6", a:"5"}, {n:"Thompson", s:"17", r:"3", a:"2"}, {n:"Wiggins", s:"18", r:"8", a:"2"}, {n:"Green", s:"6", r:"8", a:"6"}, {n:"Looney", s:"5", r:"7", a:"2"}], awayPlayers: ["Smart", "Brown", "Tatum", "Williams", "Horford"], missing: "Looney", options: ["Looney", "Porter", "Payton", "Bjelica"] },
   { id: 19, matchup: "DEN vs MIA", date: "2023 FINALS", home: "NUGGETS", away: "HEAT", homePlayers: [{n:"Murray", s:"21", r:"6", a:"10"}, {n:"Pope", s:"7", r:"3", a:"1"}, {n:"Porter", s:"9", r:"8", a:"0"}, {n:"Gordon", s:"14", r:"7", a:"2"}, {n:"Jokic", s:"30", r:"14", a:"7"}], awayPlayers: ["Vincent", "Strus", "Butler", "Love", "Adebayo"], missing: "Pope", options: ["Pope", "Brown", "Braun", "Green"] },
-  { id: 20, matchup: "BOS vs DAL", date: "2024 FINALS", home: "CELTICS", away: "MAVS", homePlayers: [{n:"Holiday", s:"14", r:"7", a:"3"}, {n:"White", s:"13", r:"4", a:"3"}, {n:"Brown", s:"20", r:"5", a:"5"}, {n:"Tatum", s:"22", r:"7", a:"7"}, {n:"Porzingis", s:"12", r:"4", a:"1"}], awayPlayers: ["Doncic", "Irving", "Jones", "Washington", "Gafford"], missing: "Porzingis", options: ["Porzingis", "Horford", "Pritchard", "Hauser"] }
+  { id: 20, matchup: "BOS vs DAL", date: "2024 FINALS", home: "CELTICS", away: "MAVS", homePlayers: [{n:"Holiday", s:"14", r:"7", a:"3"}, {n:"White", s:"13", r:"4", a:"3"}, {n:"Brown", s:"20", r:"5", a:"5"}, {n:"Tatum", s:"22", r:"7", a:"7"}, {n:"Porzingis", s:"12", r:"4", a:"1"}], awayPlayers: ["Doncic", "Irving", "Jones", "Washington", "Gafford"], missing: "Porzingis", options: ["Porzingis", "Horford", "Pritchard", "Hauser"] },
+  { id: 21, matchup: "CHI vs LAL", date: "1991 FINALS", home: "BULLS", away: "LAKERS", homePlayers: [{n:"Paxson", s:"10", r:"2", a:"3"}, {n:"Jordan", s:"31", r:"6", a:"11"}, {n:"Pippen", s:"20", r:"7", a:"5"}, {n:"Grant", s:"12", r:"8", a:"1"}, {n:"Cartwright", s:"7", r:"5", a:"1"}], awayPlayers: ["Scott", "Johnson", "Worthy", "Green", "Divac"], missing: "Grant", options: ["Grant", "Perdue", "Hodges", "Armstrong"] },
+  { id: 22, matchup: "HOU vs ORL", date: "1995 FINALS", home: "ROCKETS", away: "MAGIC", homePlayers: [{n:"Maxwell", s:"7", r:"2", a:"2"}, {n:"Drexler", s:"17", r:"5", a:"4"}, {n:"Horry", s:"12", r:"4", a:"3"}, {n:"Elie", s:"8", r:"3", a:"1"}, {n:"Olajuwon", s:"35", r:"15", a:"4"}], awayPlayers: ["Anderson", "Hardaway", "Scott", "Grant", "Neal"], missing: "Elie", options: ["Elie", "Cassell", "Herrera", "Smith"] },
+  { id: 23, matchup: "DET vs LAL", date: "1989 FINALS", home: "PISTONS", away: "LAKERS", homePlayers: [{n:"Thomas", s:"21", r:"3", a:"10"}, {n:"Dumars", s:"17", r:"2", a:"3"}, {n:"Aguirre", s:"12", r:"4", a:"2"}, {n:"Rodman", s:"9", r:"7", a:"1"}, {n:"Laimbeer", s:"12", r:"8", a:"1"}], awayPlayers: ["Scott", "Johnson", "Worthy", "Green", "Divac"], missing: "Aguirre", options: ["Aguirre", "Salley", "Edwards", "Mahorn"] },
+  { id: 24, matchup: "PHI vs LAL", date: "1983 FINALS", home: "76ERS", away: "LAKERS", homePlayers: [{n:"Cheeks", s:"12", r:"3", a:"8"}, {n:"Toney", s:"18", r:"3", a:"4"}, {n:"Erving", s:"19", r:"7", a:"3"}, {n:"Jones", s:"10", r:"6", a:"2"}, {n:"Malone", s:"24", r:"15", a:"1"}], awayPlayers: ["Nixon", "Cooper", "Worthy", "Rambis", "Abdul-Jabbar"], missing: "Jones", options: ["Jones", "Richardson", "Iavaroni", "Mix"] },
+  { id: 25, matchup: "BOS vs LAL", date: "1987 FINALS", home: "CELTICS", away: "LAKERS", homePlayers: [{n:"Ainge", s:"15", r:"2", a:"4"}, {n:"Johnson", s:"12", r:"3", a:"6"}, {n:"Bird", s:"28", r:"9", a:"6"}, {n:"McHale", s:"20", r:"8", a:"2"}, {n:"Parish", s:"13", r:"10", a:"1"}], awayPlayers: ["Scott", "Johnson", "Worthy", "Green", "Abdul-Jabbar"], missing: "Johnson", options: ["Johnson", "Walton", "Wedman", "Vrankovic"] },
+  { id: 26, matchup: "CHI vs SEA", date: "1996 FINALS", home: "BULLS", away: "SONICS", homePlayers: [{n:"Harper", s:"9", r:"2", a:"3"}, {n:"Jordan", s:"27", r:"5", a:"4"}, {n:"Pippen", s:"14", r:"7", a:"5"}, {n:"Rodman", s:"5", r:"11", a:"1"}, {n:"Longley", s:"9", r:"6", a:"1"}], awayPlayers: ["Payton", "Hawkins", "Schrempf", "Kemp", "Ellis"], missing: "Longley", options: ["Longley", "Kukoc", "Wennington", "Kerr"] },
+  { id: 27, matchup: "NYK vs HOU", date: "1994 FINALS", home: "KNICKS", away: "ROCKETS", homePlayers: [{n:"Starks", s:"13", r:"3", a:"4"}, {n:"Harper", s:"9", r:"2", a:"3"}, {n:"Oakley", s:"9", r:"11", a:"2"}, {n:"Mason", s:"14", r:"7", a:"2"}, {n:"Ewing", s:"25", r:"12", a:"3"}], awayPlayers: ["Smith", "Maxwell", "Horry", "Thorpe", "Olajuwon"], missing: "Mason", options: ["Mason", "Anthony", "Davis", "Ward"] },
+  { id: 28, matchup: "GSW vs CLE", date: "2017 FINALS", home: "WARRIORS", away: "CAVALIERS", homePlayers: [{n:"Curry", s:"34", r:"6", a:"6"}, {n:"Thompson", s:"11", r:"4", a:"1"}, {n:"Iguodala", s:"9", r:"6", a:"5"}, {n:"Green", s:"10", r:"8", a:"6"}, {n:"Durant", s:"39", r:"7", a:"5"}], awayPlayers: ["Irving", "Smith", "James", "Love", "Thompson"], missing: "Iguodala", options: ["Iguodala", "Livingston", "West", "McCaw"] },
+  { id: 29, matchup: "MIL vs BOS", date: "1974 FINALS", home: "BUCKS", away: "CELTICS", homePlayers: [{n:"Robertson", s:"18", r:"5", a:"6"}, {n:"Dandridge", s:"20", r:"6", a:"3"}, {n:"Abdul-Jabbar", s:"34", r:"11", a:"2"}, {n:"Smith", s:"12", r:"7", a:"2"}, {n:"Winters", s:"11", r:"3", a:"3"}], awayPlayers: ["Cowens", "Havlicek", "White", "Nelson", "Silas"], missing: "Winters", options: ["Winters", "Perry", "McGlocklin", "Boozer"] },
+  { id: 30, matchup: "SAS vs NJN", date: "2003 FINALS", home: "SPURS", away: "NETS", homePlayers: [{n:"Parker", s:"15", r:"3", a:"5"}, {n:"Bowen", s:"7", r:"3", a:"1"}, {n:"Robinson", s:"13", r:"17", a:"1"}, {n:"Duncan", s:"21", r:"20", a:"10"}, {n:"Ginobili", s:"14", r:"4", a:"3"}], awayPlayers: ["Kidd", "Martin", "Van Horn", "Jefferson", "Mourning"], missing: "Ginobili", options: ["Ginobili", "Barry", "Rose", "Turkoglu"] }
 ];
 
 const MissingGame = () => {
   const addScore = useGameStore((state) => state.addScore);
-  const [idx, setIdx] = useState(0);
+  const [idx, setIdx] = useState(() => getDailyIndex(MATCH_POOL.length));
+  const [isDailyMatch, setIsDailyMatch] = useState(true); // sadece açılıştaki ilk maç için "TODAY'S MATCH" rozeti
   const [score, setScore] = useState(0);
   const [time, setTime] = useState(0);
   const [highScore, setHighScore] = useState(parseInt(localStorage.getItem('fc_high_score')) || 0);
@@ -67,6 +79,7 @@ const MissingGame = () => {
     
     setTimeout(() => { 
         setIdx((i) => (i + 1) % MATCH_POOL.length); 
+        setIsDailyMatch(false);
         setStatus('playing'); 
     }, 1200);
   };
@@ -78,7 +91,10 @@ const MissingGame = () => {
       <div className="flex justify-between items-center mb-12 border-b border-white/10 pb-8">
         <div>
           <h1 className="text-4xl font-black uppercase tracking-tighter italic">MISSING PLAYER</h1>
-          <p className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1">{match.date} · {match.matchup}</p>
+          <p className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1">
+            {isDailyMatch && <span className="text-emerald-400 mr-2">★ TODAY'S MATCH</span>}
+            {match.date} · {match.matchup}
+          </p>
         </div>
         
         <div className="flex gap-10 items-center">

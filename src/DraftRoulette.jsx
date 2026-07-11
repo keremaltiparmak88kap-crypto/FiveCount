@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from './store';
+import { getDailyItem } from './dailyRotation';
 
-// 15 adet veri ile genişletilmiş liste
+// 40 yıllık gerçek NBA draft 1 numara seçimleri (1985-2024)
 const DRAFT_DATA = [
+  { year: 2024, pick: 1, name: "ZACCHARIE RISACHER", team: "atl" },
   { year: 2023, pick: 1, name: "VICTOR WEMBANYAMA", team: "sas" },
   { year: 2022, pick: 1, name: "PAOLO BANCHERO", team: "orl" },
   { year: 2021, pick: 1, name: "CADE CUNNINGHAM", team: "det" },
@@ -18,12 +20,37 @@ const DRAFT_DATA = [
   { year: 2012, pick: 1, name: "ANTHONY DAVIS", team: "nop" },
   { year: 2011, pick: 1, name: "KYRIE IRVING", team: "cle" },
   { year: 2010, pick: 1, name: "JOHN WALL", team: "was" },
-  { year: 2009, pick: 1, name: "BLAKE GRIFFIN", team: "lac" }
+  { year: 2009, pick: 1, name: "BLAKE GRIFFIN", team: "lac" },
+  { year: 2008, pick: 1, name: "DERRICK ROSE", team: "chi" },
+  { year: 2007, pick: 1, name: "GREG ODEN", team: "por" },
+  { year: 2006, pick: 1, name: "ANDREA BARGNANI", team: "tor" },
+  { year: 2005, pick: 1, name: "ANDREW BOGUT", team: "mil" },
+  { year: 2004, pick: 1, name: "DWIGHT HOWARD", team: "orl" },
+  { year: 2003, pick: 1, name: "LEBRON JAMES", team: "cle" },
+  { year: 2002, pick: 1, name: "YAO MING", team: "hou" },
+  { year: 2001, pick: 1, name: "KWAME BROWN", team: "was" },
+  { year: 2000, pick: 1, name: "KENYON MARTIN", team: "bkn" },
+  { year: 1999, pick: 1, name: "ELTON BRAND", team: "chi" },
+  { year: 1998, pick: 1, name: "MICHAEL OLOWOKANDI", team: "lac" },
+  { year: 1997, pick: 1, name: "TIM DUNCAN", team: "sas" },
+  { year: 1996, pick: 1, name: "ALLEN IVERSON", team: "phi" },
+  { year: 1995, pick: 1, name: "JOE SMITH", team: "gsw" },
+  { year: 1994, pick: 1, name: "GLENN ROBINSON", team: "mil" },
+  { year: 1993, pick: 1, name: "CHRIS WEBBER", team: "orl" },
+  { year: 1992, pick: 1, name: "SHAQUILLE ONEAL", team: "orl" },
+  { year: 1991, pick: 1, name: "LARRY JOHNSON", team: "cha" },
+  { year: 1990, pick: 1, name: "DERRICK COLEMAN", team: "bkn" },
+  { year: 1989, pick: 1, name: "PERVIS ELLISON", team: "sac" },
+  { year: 1988, pick: 1, name: "DANNY MANNING", team: "lac" },
+  { year: 1987, pick: 1, name: "DAVID ROBINSON", team: "sas" },
+  { year: 1986, pick: 1, name: "BRAD DAUGHERTY", team: "cle" },
+  { year: 1985, pick: 1, name: "PATRICK EWING", team: "nyk" }
 ];
 
 const DraftRoulette = () => {
   const addScore = useGameStore((state) => state.addScore);
-  const [current, setCurrent] = useState(DRAFT_DATA[0]);
+  const [current, setCurrent] = useState(() => getDailyItem(DRAFT_DATA));
+  const [isDailyPick, setIsDailyPick] = useState(true); // sadece açılıştaki ilk soru için "TODAY'S PICK" rozeti
   const [options, setOptions] = useState([]);
   const [score, setScore] = useState(0);
   const [status, setStatus] = useState(null);
@@ -55,6 +82,7 @@ const DraftRoulette = () => {
         setStatus(null);
         setSelected(null);
         setIsTransitioning(false);
+        setIsDailyPick(false);
       }, 2000);
     } else {
       setStatus("wrong");
@@ -74,6 +102,7 @@ const DraftRoulette = () => {
         {!isTransitioning ? (
           <motion.div key="game" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-grow flex flex-col justify-center">
             <h2 className="text-xl font-black mb-8 text-orange-500 uppercase">
+              {isDailyPick && <span className="block text-emerald-400 text-[10px] tracking-widest mb-2">★ TODAY'S PICK</span>}
               WHO WAS THE {current.year} #1 PICK?
             </h2>
             <div className="grid grid-cols-2 gap-3">

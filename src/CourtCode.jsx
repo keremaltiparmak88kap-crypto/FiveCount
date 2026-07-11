@@ -2,10 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShareButton } from './ShareButton'; // Dosyan aynı klasördeyse böyle
 import { useGameStore } from './store';
+import { getTodaysCourtCode } from './courtCodePool';
+
 const CourtCode = () => {
   const addScore = useGameStore((state) => state.addScore);
-  const target = "ALPEREN";
-  const targetName = "ALPEREN ŞENGÜN";
+  const todaysWord = getTodaysCourtCode();
+  const target = todaysWord.code;
+  const targetName = todaysWord.fullName;
   const containerRef = useRef(null);
   
   const [guesses, setGuesses] = useState(Array(5).fill(""));
@@ -34,7 +37,7 @@ const CourtCode = () => {
 
   const handleKeyDown = (e) => {
     if (won) return;
-    if (e.key === 'Enter' && currentGuess.length === 7 && currentRow < 5) {
+    if (e.key === 'Enter' && currentGuess.length === target.length && currentRow < 5) {
       const newGuesses = [...guesses];
       newGuesses[currentRow] = currentGuess;
       setGuesses(newGuesses);
@@ -49,7 +52,7 @@ const CourtCode = () => {
       setCurrentRow(currentRow + 1);
     } else if (e.key === 'Backspace') {
       setCurrentGuess(currentGuess.slice(0, -1));
-    } else if (currentGuess.length < 7 && /^[A-ZĞÜŞİÖÇ]$/i.test(e.key)) {
+    } else if (currentGuess.length < target.length && /^[A-ZĞÜŞİÖÇ]$/i.test(e.key)) {
       setCurrentGuess(currentGuess + e.key.toUpperCase());
     }
   };
@@ -69,10 +72,10 @@ const CourtCode = () => {
          <p className="text-orange-500 font-black text-xs uppercase tracking-widest">Score: {score}</p>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 max-w-full overflow-x-auto px-2">
         {guesses.map((guess, rowIndex) => (
-          <div key={rowIndex} className="flex gap-2">
-            {[...Array(7)].map((_, i) => {
+          <div key={rowIndex} className="flex gap-1.5 justify-center">
+            {[...Array(target.length)].map((_, i) => {
               const letter = rowIndex === currentRow ? currentGuess[i] : guess[i];
               // Zafer anında kazanan satırı titreterek yeşile çevir
               const isWinRow = won && rowIndex === currentRow - 1;
@@ -81,7 +84,7 @@ const CourtCode = () => {
                   key={i}
                   animate={isWinRow ? { scale: [1, 1.1, 1], backgroundColor: "#059669" } : {}}
                   transition={{ delay: isWinRow ? i * 0.1 : 0 }}
-                  className={`w-12 h-14 border flex items-center justify-center text-2xl font-black rounded-lg 
+                  className={`w-9 h-12 sm:w-12 sm:h-14 shrink-0 border flex items-center justify-center text-lg sm:text-2xl font-black rounded-lg 
                     ${rowIndex < currentRow && !isWinRow ? (guess[i] === target[i] ? "bg-emerald-600" : target.includes(guess[i]) ? "bg-orange-600" : "bg-zinc-800") : "bg-zinc-900 border-white/10"}`}
                 >
                   {letter || ""}
