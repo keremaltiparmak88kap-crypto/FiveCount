@@ -85,62 +85,62 @@ const MissingGame = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-8 bg-black min-h-screen text-white font-sans">
+    <div className="max-w-4xl mx-auto p-4 sm:p-8 bg-black min-h-screen text-white font-sans">
       
       {/* HEADER: STATS VE TIMER */}
-      <div className="flex justify-between items-center mb-12 border-b border-white/10 pb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 sm:mb-12 border-b border-white/10 pb-6 sm:pb-8">
         <div>
-          <h1 className="text-4xl font-black uppercase tracking-tighter italic">MISSING PLAYER</h1>
-          <p className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1">
+          <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tighter italic">MISSING PLAYER</h1>
+          <p className="text-[9px] sm:text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1">
             {isDailyMatch && <span className="text-emerald-400 mr-2">★ TODAY'S MATCH</span>}
             {match.date} · {match.matchup}
           </p>
         </div>
         
-        <div className="flex gap-10 items-center">
+        <div className="flex gap-6 sm:gap-10 items-center">
             <div className="text-right">
                 <div className="text-[9px] uppercase tracking-widest opacity-50 text-white">Elapsed Time</div>
-                <div className="text-3xl font-mono font-bold text-white tracking-widest">{formatTime(time)}</div>
+                <div className="text-xl sm:text-3xl font-mono font-bold text-white tracking-widest">{formatTime(time)}</div>
             </div>
             <div className="text-right">
                 <div className="text-[9px] uppercase tracking-widest opacity-50 text-white">Score</div>
-                <div className="text-3xl font-black text-white">{score}</div>
+                <div className="text-xl sm:text-3xl font-black text-white">{score}</div>
                 <div className="text-[9px] uppercase text-amber-500 font-bold">BEST: {highScore}</div>
             </div>
         </div>
       </div>
 
       {/* GAME AREA */}
-      <div className="space-y-12">
-        <div className="flex justify-center gap-2">
+      <div className="space-y-8 sm:space-y-12">
+        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
             {match.awayPlayers.map((name, i) => (
-                <div key={i} className="px-4 py-2 bg-neutral-900/50 rounded-lg text-[10px] uppercase tracking-wider font-bold border border-white/5 text-neutral-400">
+                <div key={i} className="px-3 py-1.5 sm:px-4 sm:py-2 bg-neutral-900/50 rounded-lg text-[9px] sm:text-[10px] uppercase tracking-wider font-bold border border-white/5 text-neutral-400">
                     {name}
                 </div>
             ))}
         </div>
 
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4">
             <AnimatePresence mode="wait">
                 {match.homePlayers.map((p, i) => (
                     <motion.div 
                         key={`${match.id}-${i}`}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className={`h-40 rounded-2xl border-2 flex flex-col items-center justify-center p-4 transition-all duration-300 ${
+                        className={`h-28 sm:h-40 rounded-2xl border-2 flex flex-col items-center justify-center p-2 sm:p-4 transition-all duration-300 ${
                             p.n === match.missing && status === 'correct' ? 'border-green-500 bg-green-900/20' : 
                             p.n === match.missing && status === 'wrong' ? 'border-red-600 bg-red-900/20' : 
                             'border-white/5 bg-zinc-900/30'
                         }`}
                     >
-                        <span className="text-xs font-black uppercase opacity-60">
+                        <span className="text-[10px] sm:text-xs font-black uppercase opacity-60 text-center">
                             {p.n === match.missing && status !== 'correct' ? "???" : p.n}
                         </span>
                         {p.n !== match.missing && (
-                            <div className="mt-4 grid grid-cols-3 gap-2 w-full text-center">
-                                <span className="text-[8px] font-bold text-orange-500">P:{p.s}</span>
-                                <span className="text-[8px] font-bold text-orange-500">R:{p.r}</span>
-                                <span className="text-[8px] font-bold text-orange-500">A:{p.a}</span>
+                            <div className="mt-2 sm:mt-4 grid grid-cols-3 gap-1 sm:gap-2 w-full text-center">
+                                <span className="text-[7px] sm:text-[8px] font-bold text-orange-500">P:{p.s}</span>
+                                <span className="text-[7px] sm:text-[8px] font-bold text-orange-500">R:{p.r}</span>
+                                <span className="text-[7px] sm:text-[8px] font-bold text-orange-500">A:{p.a}</span>
                             </div>
                         )}
                     </motion.div>
@@ -148,12 +148,12 @@ const MissingGame = () => {
             </AnimatePresence>
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             {match.options.map((opt) => (
                 <button 
                     key={opt}
                     onClick={() => handleGuess(opt)}
-                    className={`py-6 rounded-xl font-black text-sm uppercase tracking-widest border transition-all ${
+                    className={`py-4 sm:py-6 rounded-xl font-black text-xs sm:text-sm uppercase tracking-widest border transition-all ${
                         status === 'playing' ? 'bg-zinc-800 hover:bg-zinc-700 border-white/10' :
                         opt === match.missing ? 'bg-green-600 border-green-400' : 'bg-zinc-900 opacity-50 border-transparent'
                     }`}

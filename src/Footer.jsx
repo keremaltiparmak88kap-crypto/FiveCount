@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Footer = () => {
+const Footer = ({ onNavigate }) => {
   return (
     <footer className="relative w-full py-10 px-4 mt-20 text-center text-zinc-500 text-[10px] uppercase tracking-widest
                         bg-gradient-to-b from-white/[0.03] to-transparent">
@@ -9,9 +9,9 @@ const Footer = () => {
 
       {/* Links */}
       <div className="flex justify-center gap-8 mb-6">
-        <a href="#" className="hover:text-orange-400 transition-colors">Privacy Policy</a>
-        <a href="#" className="hover:text-orange-400 transition-colors">Legacy Contact</a>
-        <a href="#" className="hover:text-orange-400 transition-colors">Terms of Use</a>
+        <button onClick={() => onNavigate?.('privacy')} className="hover:text-orange-400 transition-colors">Privacy Policy</button>
+        <button onClick={() => onNavigate?.('privacy')} className="hover:text-orange-400 transition-colors">Legacy Contact</button>
+        <button onClick={() => onNavigate?.('terms')} className="hover:text-orange-400 transition-colors">Terms of Use</button>
       </div>
       
       {/* Disclaimer Text */}

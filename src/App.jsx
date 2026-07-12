@@ -36,6 +36,8 @@ const WhoAmIGame = lazy(() => import('./WhoAmIGame'));
 const HigherOrLowerGame = lazy(() => import('./HigherOrLowerGame'));
 const SilhouetteGame = lazy(() => import('./SilhouetteGame'));
 const EmojiPlayerGame = lazy(() => import('./EmojiPlayerGame'));
+const PrivacyPolicy = lazy(() => import('./PrivacyPolicy'));
+const TermsOfUse = lazy(() => import('./TermsOfUse'));
 // --- SABİT TANIMLAMALAR ---
 const DAILY_PLAYER = {
   name: "Marcus 'The Flash' Jaxon",
@@ -332,7 +334,7 @@ function App() {
                         animate={{ x: ["100%", "-100%"] }}
                         transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
                       >
-                        <span>10 GAMES LIVE — PICK YOUR COURT</span>
+                        <span>{GAMES.length} GAMES LIVE — PICK YOUR COURT</span>
                         <span>BINGO: 5 NEW LEGEND CARDS UNLOCKED</span>
                         <span>3,204 PLAYERS ONLINE RIGHT NOW</span>
                         <span>NEW MODE LOADING — COMING SOON</span>
@@ -488,7 +490,19 @@ function App() {
                   </div>
                 </motion.div>
               ) : (
-                <motion.div key="game" className="p-6">
+                <motion.div
+                  key="game"
+                  className="p-6"
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={{ left: 0, right: 0.3 }}
+                  onDragEnd={(e, info) => {
+                    // Sağa doğru yeterince kaydırılırsa (offset veya hız eşiğini geçerse) hub'a dön
+                    if (info.offset.x > 90 || info.velocity.x > 500) {
+                      handleGameSelect("hub");
+                    }
+                  }}
+                >
                   <div className="mb-8 border-b border-white/10 pb-4">
                     <h1 onClick={() => handleGameSelect("hub")} className="group text-xl font-black italic tracking-tighter cursor-pointer">
                       <span className="text-orange-500">FIVE</span>
@@ -524,6 +538,8 @@ function App() {
                     {currentGame === "achievements" && <Achievements />}
                     {currentGame === "quests" && <DailyQuests />}
                     {currentGame === "friends" && <Friends />}
+                    {currentGame === "privacy" && <PrivacyPolicy onBack={() => handleGameSelect("hub")} />}
+                    {currentGame === "terms" && <TermsOfUse onBack={() => handleGameSelect("hub")} />}
                   </Suspense>
                   {/* Grid mantığın */}
                   {currentGame === "grid" && !selectedTeam && (
@@ -555,7 +571,7 @@ function App() {
         </AnimatePresence>
 
         {/* Footer Buraya Eklendi */}
-        <Footer />
+        <Footer onNavigate={handleGameSelect} />
       </div>
     </div>
   );

@@ -57,6 +57,33 @@ const CourtCode = () => {
     }
   };
 
+  // Mobilde ekran klavyesi ancak gerçek bir <input>'a odaklanınca açılır — bu yüzden
+  // görünmez ama gerçek bir input kullanıyoruz. Değer değişimini harf harf, yukarıdaki
+  // handleKeyDown ile AYNI kurallarla işliyoruz (silme, uzunluk sınırı, sadece harf).
+  const handleMobileInputChange = (e) => {
+    if (won) return;
+    const raw = e.target.value;
+    // Kullanıcı input'a max target.length harf yazabilsin, fazlasını kırp
+    const onlyLetters = raw.toUpperCase().replace(/[^A-ZĞÜŞİÖÇ]/g, "").slice(0, target.length);
+    setCurrentGuess(onlyLetters);
+  };
+
+  const handleMobileSubmit = () => {
+    if (won || currentGuess.length !== target.length || currentRow >= 5) return;
+    const newGuesses = [...guesses];
+    newGuesses[currentRow] = currentGuess;
+    setGuesses(newGuesses);
+
+    if (currentGuess === target) {
+      setWon(true);
+      const points = (5 - currentRow) * 100;
+      setScore(points);
+      addScore(points, "code");
+    }
+    setCurrentGuess("");
+    setCurrentRow(currentRow + 1);
+  };
+
   return (
     <div className="flex flex-col items-center gap-6 p-6 outline-none" onKeyDown={handleKeyDown} tabIndex="0" ref={containerRef}>
       
@@ -94,6 +121,31 @@ const CourtCode = () => {
           </div>
         ))}
       </div>
+
+      {/* Mobil klavye tetikleyici — görünmez ama gerçek bir input, dokununca sistem klavyesi açılır */}
+      {!won && (
+        <div className="w-full max-w-xs flex flex-col items-center gap-3">
+          <input
+            type="text"
+            inputMode="text"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            autoComplete="off"
+            value={currentGuess}
+            onChange={handleMobileInputChange}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleMobileSubmit(); }}
+            placeholder="Tap to type your guess"
+            className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-center text-white font-black uppercase tracking-widest outline-none focus:border-orange-500"
+          />
+          <button
+            onClick={handleMobileSubmit}
+            disabled={currentGuess.length !== target.length}
+            className="w-full bg-orange-500 disabled:bg-zinc-800 disabled:text-white/30 text-black font-black py-3 rounded-xl uppercase text-xs tracking-widest transition-colors"
+          >
+            Submit Guess
+          </button>
+        </div>
+      )}
 
       <AnimatePresence>
         {won && (
