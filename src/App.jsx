@@ -36,8 +36,8 @@ const WhoAmIGame = lazy(() => import('./WhoAmIGame'));
 const HigherOrLowerGame = lazy(() => import('./HigherOrLowerGame'));
 const SilhouetteGame = lazy(() => import('./SilhouetteGame'));
 const EmojiPlayerGame = lazy(() => import('./EmojiPlayerGame'));
-const PrivacyPolicy = lazy(() => import('./PrivacyPolicy'));
-const TermsOfUse = lazy(() => import('./TermsOfUse'));
+const PrivacyPolicy = lazy(() => import('./Privacypolicy'));
+const TermsOfUse = lazy(() => import('./Termsofuse'));
 // --- SABİT TANIMLAMALAR ---
 const DAILY_PLAYER = {
   name: "Marcus 'The Flash' Jaxon",
