@@ -3,7 +3,43 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from './store';
 import { getDailyIndex } from './dailyRotation';
 
-// --- MAÇ VERİTABANI (20 MAÇ) ---
+// Basit Fisher-Yates karıştırma — seçenek sırasının her maçta rastgele olmasını sağlar.
+const shuffleArray = (arr) => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+// Takım kısaltmasından logo — App.jsx'teki ALL_TEAMS ile aynı kaynak (ESPN CDN).
+const TEAM_LOGOS = {
+  WARRIORS: "https://a.espncdn.com/i/teamlogos/nba/500/gs.png",
+  CAVALIERS: "https://a.espncdn.com/i/teamlogos/nba/500/cle.png",
+  LAKERS: "https://a.espncdn.com/i/teamlogos/nba/500/lal.png",
+  CELTICS: "https://a.espncdn.com/i/teamlogos/nba/500/bos.png",
+  HEAT: "https://a.espncdn.com/i/teamlogos/nba/500/mia.png",
+  SPURS: "https://a.espncdn.com/i/teamlogos/nba/500/sa.png",
+  BULLS: "https://a.espncdn.com/i/teamlogos/nba/500/chi.png",
+  JAZZ: "https://a.espncdn.com/i/teamlogos/nba/500/utah.png",
+  PISTONS: "https://a.espncdn.com/i/teamlogos/nba/500/det.png",
+  MAVS: "https://a.espncdn.com/i/teamlogos/nba/500/dal.png",
+  MAVERICKS: "https://a.espncdn.com/i/teamlogos/nba/500/dal.png",
+  ROCKETS: "https://a.espncdn.com/i/teamlogos/nba/500/hou.png",
+  KNICKS: "https://a.espncdn.com/i/teamlogos/nba/500/ny.png",
+  "76ERS": "https://a.espncdn.com/i/teamlogos/nba/500/phi.png",
+  RAPTORS: "https://a.espncdn.com/i/teamlogos/nba/500/tor.png",
+  BUCKS: "https://a.espncdn.com/i/teamlogos/nba/500/mil.png",
+  SUNS: "https://a.espncdn.com/i/teamlogos/nba/500/phx.png",
+  MAGIC: "https://a.espncdn.com/i/teamlogos/nba/500/orl.png",
+  NUGGETS: "https://a.espncdn.com/i/teamlogos/nba/500/den.png",
+  SONICS: "https://a.espncdn.com/i/teamlogos/nba/500/sea.png",
+  NETS: "https://a.espncdn.com/i/teamlogos/nba/500/bkn.png",
+  CLIPPERS: "https://a.espncdn.com/i/teamlogos/nba/500/lac.png",
+};
+
+// --- MAÇ VERİTABANI (30 MAÇ) ---
 const MATCH_POOL = [
   { id: 1, matchup: "GSW vs CLE", date: "2016 FINALS", home: "WARRIORS", away: "CAVALIERS", homePlayers: [{n:"Curry", s:"30", r:"5", a:"6"}, {n:"Klay", s:"22", r:"3", a:"2"}, {n:"Barnes", s:"11", r:"4", a:"1"}, {n:"Draymond", s:"14", r:"9", a:"7"}, {n:"Bogut", s:"5", r:"7", a:"2"}], awayPlayers: ["Irving", "Smith", "James", "Love", "Thompson"], missing: "Bogut", options: ["Bogut", "Ezeli", "Speights", "Livingston"] },
   { id: 2, matchup: "LAL vs BOS", date: "2010 FINALS", home: "LAKERS", away: "CELTICS", homePlayers: [{n:"Fisher", s:"7", r:"2", a:"2"}, {n:"Kobe", s:"28", r:"5", a:"4"}, {n:"Artest", s:"10", r:"4", a:"1"}, {n:"Gasol", s:"18", r:"11", a:"3"}, {n:"Bynum", s:"10", r:"7", a:"1"}], awayPlayers: ["Rondo", "Allen", "Pierce", "KG", "Perkins"], missing: "Gasol", options: ["Gasol", "Odom", "Walton", "Brown"] },
@@ -48,6 +84,14 @@ const MissingGame = () => {
   const timerRef = useRef(null);
   const match = MATCH_POOL[idx];
 
+  // Seçenekleri her maç değiştiğinde karıştırıyoruz — doğru cevap artık her zaman ilk
+  // sırada gelmiyor. match.id'ye bağlı olduğu için maç değişmeden yeniden karışmıyor.
+  const [shuffledOptions, setShuffledOptions] = useState(() => shuffleArray(match.options));
+
+  useEffect(() => {
+    setShuffledOptions(shuffleArray(match.options));
+  }, [match.id]);
+
   // Zamanlayıcıyı Başlat
   useEffect(() => {
     timerRef.current = setInterval(() => {
@@ -79,18 +123,18 @@ const MissingGame = () => {
     
     setTimeout(() => { 
         setIdx((i) => (i + 1) % MATCH_POOL.length); 
-        setIsDailyMatch(false);
         setStatus('playing'); 
+        setIsDailyMatch(false);
     }, 1200);
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-8 bg-black min-h-screen text-white font-sans">
+    <div className="max-w-4xl mx-auto p-4 sm:p-8 bg-[#060608] min-h-screen text-white font-sans">
       
       {/* HEADER: STATS VE TIMER */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 sm:mb-12 border-b border-white/10 pb-6 sm:pb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 sm:mb-10 border-b border-white/10 pb-6 sm:pb-8">
         <div>
-          <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tighter italic">MISSING PLAYER</h1>
+          <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tighter italic">MISSING<span className="text-orange-500">5</span></h1>
           <p className="text-[9px] sm:text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1">
             {isDailyMatch && <span className="text-emerald-400 mr-2">★ TODAY'S MATCH</span>}
             {match.date} · {match.matchup}
@@ -99,25 +143,38 @@ const MissingGame = () => {
         
         <div className="flex gap-6 sm:gap-10 items-center">
             <div className="text-right">
-                <div className="text-[9px] uppercase tracking-widest opacity-50 text-white">Elapsed Time</div>
+                <div className="text-[9px] uppercase tracking-widest text-white/30">Elapsed Time</div>
                 <div className="text-xl sm:text-3xl font-mono font-bold text-white tracking-widest">{formatTime(time)}</div>
             </div>
             <div className="text-right">
-                <div className="text-[9px] uppercase tracking-widest opacity-50 text-white">Score</div>
-                <div className="text-xl sm:text-3xl font-black text-white">{score}</div>
+                <div className="text-[9px] uppercase tracking-widest text-white/30">Score</div>
+                <div className="text-xl sm:text-3xl font-black text-orange-400">{score}</div>
                 <div className="text-[9px] uppercase text-amber-500 font-bold">BEST: {highScore}</div>
             </div>
         </div>
       </div>
 
       {/* GAME AREA */}
-      <div className="space-y-8 sm:space-y-12">
-        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
+      <div className="space-y-6 sm:space-y-10">
+        {/* Takım logoları + rakip kadro */}
+        <div className="flex items-center justify-center gap-4 sm:gap-8">
+          <div className="flex flex-col items-center gap-1.5 shrink-0">
+            {TEAM_LOGOS[match.home] && <img src={TEAM_LOGOS[match.home]} alt={match.home} className="w-9 h-9 sm:w-12 sm:h-12 object-contain" />}
+            <span className="text-[8px] font-black uppercase text-white/40 tracking-widest">{match.home}</span>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 flex-1">
             {match.awayPlayers.map((name, i) => (
-                <div key={i} className="px-3 py-1.5 sm:px-4 sm:py-2 bg-neutral-900/50 rounded-lg text-[9px] sm:text-[10px] uppercase tracking-wider font-bold border border-white/5 text-neutral-400">
+                <div key={i} className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/5 rounded-lg text-[9px] sm:text-[10px] uppercase tracking-wider font-bold border border-white/10 text-white/40">
                     {name}
                 </div>
             ))}
+          </div>
+
+          <div className="flex flex-col items-center gap-1.5 shrink-0">
+            {TEAM_LOGOS[match.away] && <img src={TEAM_LOGOS[match.away]} alt={match.away} className="w-9 h-9 sm:w-12 sm:h-12 object-contain" />}
+            <span className="text-[8px] font-black uppercase text-white/40 tracking-widest">{match.away}</span>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4">
@@ -127,20 +184,20 @@ const MissingGame = () => {
                         key={`${match.id}-${i}`}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className={`h-28 sm:h-40 rounded-2xl border-2 flex flex-col items-center justify-center p-2 sm:p-4 transition-all duration-300 ${
-                            p.n === match.missing && status === 'correct' ? 'border-green-500 bg-green-900/20' : 
-                            p.n === match.missing && status === 'wrong' ? 'border-red-600 bg-red-900/20' : 
-                            'border-white/5 bg-zinc-900/30'
+                        className={`relative h-28 sm:h-40 rounded-2xl border flex flex-col items-center justify-center p-2 sm:p-4 overflow-hidden transition-colors duration-300 ${
+                            p.n === match.missing && status === 'correct' ? 'border-emerald-500/50 bg-emerald-500/10' : 
+                            p.n === match.missing && status === 'wrong' ? 'border-red-500/50 bg-red-500/10' : 
+                            'border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.015]'
                         }`}
                     >
-                        <span className="text-[10px] sm:text-xs font-black uppercase opacity-60 text-center">
+                        <span className="text-[10px] sm:text-xs font-black uppercase text-white/70 text-center">
                             {p.n === match.missing && status !== 'correct' ? "???" : p.n}
                         </span>
                         {p.n !== match.missing && (
                             <div className="mt-2 sm:mt-4 grid grid-cols-3 gap-1 sm:gap-2 w-full text-center">
-                                <span className="text-[7px] sm:text-[8px] font-bold text-orange-500">P:{p.s}</span>
-                                <span className="text-[7px] sm:text-[8px] font-bold text-orange-500">R:{p.r}</span>
-                                <span className="text-[7px] sm:text-[8px] font-bold text-orange-500">A:{p.a}</span>
+                                <span className="text-[7px] sm:text-[8px] font-bold text-orange-400">P:{p.s}</span>
+                                <span className="text-[7px] sm:text-[8px] font-bold text-orange-400">R:{p.r}</span>
+                                <span className="text-[7px] sm:text-[8px] font-bold text-orange-400">A:{p.a}</span>
                             </div>
                         )}
                     </motion.div>
@@ -149,13 +206,13 @@ const MissingGame = () => {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-            {match.options.map((opt) => (
+            {shuffledOptions.map((opt) => (
                 <button 
                     key={opt}
                     onClick={() => handleGuess(opt)}
-                    className={`py-4 sm:py-6 rounded-xl font-black text-xs sm:text-sm uppercase tracking-widest border transition-all ${
-                        status === 'playing' ? 'bg-zinc-800 hover:bg-zinc-700 border-white/10' :
-                        opt === match.missing ? 'bg-green-600 border-green-400' : 'bg-zinc-900 opacity-50 border-transparent'
+                    className={`py-4 sm:py-6 rounded-xl font-black text-xs sm:text-sm uppercase tracking-widest border transition-colors ${
+                        status === 'playing' ? 'bg-white/5 hover:bg-orange-500/10 hover:border-orange-500/40 border-white/10' :
+                        opt === match.missing ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' : 'bg-white/5 opacity-40 border-white/5'
                     }`}
                 >
                     {opt}

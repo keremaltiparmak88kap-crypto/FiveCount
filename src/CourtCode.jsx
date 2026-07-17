@@ -9,8 +9,8 @@ const CourtCode = () => {
   const todaysWord = getTodaysCourtCode();
   const target = todaysWord.code;
   const targetName = todaysWord.fullName;
-  const containerRef = useRef(null);
-  
+  const inputRef = useRef(null);
+
   const [guesses, setGuesses] = useState(Array(5).fill(""));
   const [currentGuess, setCurrentGuess] = useState("");
   const [currentRow, setCurrentRow] = useState(0);
@@ -30,53 +30,21 @@ const CourtCode = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Sayfa açılır açılmaz klavye girişine hazır olsun (önceden ekrana tıklaman gerekiyordu)
+  // Sayfa açılır açılmaz klavye girişine hazır olsun (masaüstünde otomatik odaklanma)
   useEffect(() => {
-    containerRef.current?.focus();
+    inputRef.current?.focus();
   }, []);
 
-  const handleKeyDown = (e) => {
-    if (won) return;
-    if (e.key === 'Enter' && currentGuess.length === target.length && currentRow < 5) {
-      const newGuesses = [...guesses];
-      newGuesses[currentRow] = currentGuess;
-      setGuesses(newGuesses);
-      
-      if (currentGuess === target) {
-        setWon(true);
-        const points = (5 - currentRow) * 100; // Satır puanı
-        setScore(points);
-        addScore(points, "code");
-      }
-      setCurrentGuess("");
-      setCurrentRow(currentRow + 1);
-    } else if (e.key === 'Backspace') {
-      setCurrentGuess(currentGuess.slice(0, -1));
-    } else if (currentGuess.length < target.length && /^[A-ZĞÜŞİÖÇ]$/i.test(e.key)) {
-      setCurrentGuess(currentGuess + e.key.toUpperCase());
-    }
-  };
-
-  // Mobilde ekran klavyesi ancak gerçek bir <input>'a odaklanınca açılır — bu yüzden
-  // görünmez ama gerçek bir input kullanıyoruz. Değer değişimini harf harf, yukarıdaki
-  // handleKeyDown ile AYNI kurallarla işliyoruz (silme, uzunluk sınırı, sadece harf).
-  const handleMobileInputChange = (e) => {
-    if (won) return;
-    const raw = e.target.value;
-    // Kullanıcı input'a max target.length harf yazabilsin, fazlasını kırp
-    const onlyLetters = raw.toUpperCase().replace(/[^A-ZĞÜŞİÖÇ]/g, "").slice(0, target.length);
-    setCurrentGuess(onlyLetters);
-  };
-
-  const handleMobileSubmit = () => {
+  const submitGuess = () => {
     if (won || currentGuess.length !== target.length || currentRow >= 5) return;
+
     const newGuesses = [...guesses];
     newGuesses[currentRow] = currentGuess;
     setGuesses(newGuesses);
 
     if (currentGuess === target) {
       setWon(true);
-      const points = (5 - currentRow) * 100;
+      const points = (5 - currentRow) * 100; // Satır puanı
       setScore(points);
       addScore(points, "code");
     }
@@ -84,8 +52,22 @@ const CourtCode = () => {
     setCurrentRow(currentRow + 1);
   };
 
+  // TEK KAYNAK: input'un kendi value'su. Hem mobil ekran klavyesi hem fiziksel klavye
+  // aynı bu input'a yazıyor — iki ayrı dinleyici (div+input) olmadığı için çift harf
+  // sorunu artık oluşmuyor.
+  const handleInputChange = (e) => {
+    if (won) return;
+    const raw = e.target.value;
+    const onlyLetters = raw.toUpperCase().replace(/[^A-ZĞÜŞİÖÇ]/g, "").slice(0, target.length);
+    setCurrentGuess(onlyLetters);
+  };
+
+  const handleInputKeyDown = (e) => {
+    if (e.key === 'Enter') submitGuess();
+  };
+
   return (
-    <div className="flex flex-col items-center gap-6 p-6 outline-none" onKeyDown={handleKeyDown} tabIndex="0" ref={containerRef}>
+    <div className="flex flex-col items-center gap-6 p-6 outline-none">
       
       {/* BAŞLIK HİYERARŞİSİ */}
       <div className="text-center mb-2">
@@ -122,23 +104,25 @@ const CourtCode = () => {
         ))}
       </div>
 
-      {/* Mobil klavye tetikleyici — görünmez ama gerçek bir input, dokununca sistem klavyesi açılır */}
+      {/* Klavye giriş alanı — hem mobil (dokununca sistem klavyesi açılır) hem masaüstü
+          (fiziksel klavye) için TEK giriş noktası */}
       {!won && (
         <div className="w-full max-w-xs flex flex-col items-center gap-3">
           <input
+            ref={inputRef}
             type="text"
             inputMode="text"
             autoCapitalize="characters"
             autoCorrect="off"
             autoComplete="off"
             value={currentGuess}
-            onChange={handleMobileInputChange}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleMobileSubmit(); }}
+            onChange={handleInputChange}
+            onKeyDown={handleInputKeyDown}
             placeholder="Tap to type your guess"
             className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-center text-white font-black uppercase tracking-widest outline-none focus:border-orange-500"
           />
           <button
-            onClick={handleMobileSubmit}
+            onClick={submitGuess}
             disabled={currentGuess.length !== target.length}
             className="w-full bg-orange-500 disabled:bg-zinc-800 disabled:text-white/30 text-black font-black py-3 rounded-xl uppercase text-xs tracking-widest transition-colors"
           >
