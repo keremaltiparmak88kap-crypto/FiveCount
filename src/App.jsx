@@ -224,6 +224,7 @@ function App() {
   }, []);
 
   const handleGameSelect = (gameId) => {
+    if (navigator.vibrate) navigator.vibrate(20); // mobilde hafif titreşim — dokunsal geri bildirim
     playSound('click');
     setDoorOpen(false);
     setTimeout(() => {
