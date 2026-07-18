@@ -112,7 +112,7 @@ const NBA_TEAMS = [
 const ArenaDoor = ({ isOpen }) => (
   <motion.div className="fixed inset-0 z-[200] flex pointer-events-none">
     {/* SOL KAPI */}
-    <motion.div className="w-1/2 h-full bg-[#060608] border-r-2 border-orange-500 flex items-center justify-end pr-4 relative overflow-hidden" 
+    <motion.div className="w-1/2 h-full bg-[#060608] border-r-2 border-orange-500 flex items-center justify-end pr-2 sm:pr-4 relative overflow-hidden" 
             animate={{ x: isOpen ? "-100%" : "0%" }} transition={{ duration: 0.8 }}>
   
   <motion.div 
@@ -121,16 +121,16 @@ const ArenaDoor = ({ isOpen }) => (
     transition={{ repeat: Infinity, ease: "linear", duration: 40 }}
   >
      {[...NBA_TEAMS, ...NBA_TEAMS].map((team, i) => (
-       <span key={i} className="text-[60px] font-black italic uppercase mx-8 shrink-0">{team}</span>
+       <span key={i} className="text-[40px] sm:text-[60px] font-black italic uppercase mx-8 shrink-0">{team}</span>
      ))}
   </motion.div>
 
-  <span className="text-6xl font-black italic tracking-tighter text-white z-10">FIVE</span>
+  <span className="text-3xl sm:text-6xl font-black italic tracking-tighter text-white z-10">FIVE</span>
 </motion.div>
 
 {/* SAĞ KAPI */}
     <motion.div 
-      className="w-1/2 h-full bg-[#060608] border-l-2 border-orange-500 flex items-center justify-start pl-4 relative overflow-hidden" 
+      className="w-1/2 h-full bg-[#060608] border-l-2 border-orange-500 flex items-center justify-start pl-2 sm:pl-4 relative overflow-hidden" 
       animate={{ x: isOpen ? "100%" : "0%" }} 
       transition={{ duration: 0.8 }}
     >
@@ -140,10 +140,10 @@ const ArenaDoor = ({ isOpen }) => (
         transition={{ repeat: Infinity, ease: "linear", duration: 40 }}
       >
          {[...NBA_TEAMS, ...NBA_TEAMS].map((team, i) => (
-           <span key={i} className="text-[60px] font-black italic uppercase mx-8 shrink-0">{team}</span>
+           <span key={i} className="text-[40px] sm:text-[60px] font-black italic uppercase mx-8 shrink-0">{team}</span>
          ))}
       </motion.div>
-      <span className="text-6xl font-black italic tracking-tighter text-orange-500 z-10">COURT</span>
+      <span className="text-3xl sm:text-6xl font-black italic tracking-tighter text-orange-500 z-10">COURT</span>
     </motion.div>
   </motion.div>
 );
