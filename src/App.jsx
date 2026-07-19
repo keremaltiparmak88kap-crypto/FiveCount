@@ -96,7 +96,58 @@ const playSound = (type) => {
 const BasketballAtmosphere = () => (
   <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
     <div className="absolute inset-0 bg-[#060608]" />
-    <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: `linear-gradient(90deg, #f97316 1px, transparent 1px), linear-gradient(#f97316 1px, transparent 1px)`, backgroundSize: '120px 120px', transform: 'perspective(500px) rotateX(60deg)', transformOrigin: 'top', marginTop: '100px' }} />
+    {/* Gerçek basketbol sahası çizim planı — orta yuvarlak, üç sayı çizgileri, potaların
+        önündeki alanlar (key) ve saha sınırları. Çok soluk (opacity 0.07) olduğu için
+        arka planda hissedilir ama içeriğin okunurluğunu bozmaz.
+        MASAÜSTÜ: yatay saha (baseline'dan baseline'a soldan sağa).
+        MOBİL: dikey saha (baseline'dan baseline'a yukarıdan aşağı) — dar ekranda
+        daha doğal görünsün diye eksenler döndürüldü. */}
+
+    {/* Masaüstü — yatay saha */}
+    <svg
+      className="hidden sm:block absolute inset-0 w-full h-full opacity-[0.07]"
+      viewBox="0 0 940 500"
+      preserveAspectRatio="xMidYMid slice"
+      fill="none"
+      stroke="#f97316"
+      strokeWidth="2.5"
+    >
+      <rect x="10" y="10" width="920" height="480" />
+      <line x1="470" y1="10" x2="470" y2="490" />
+      <circle cx="470" cy="250" r="60" />
+      <circle cx="470" cy="250" r="20" />
+      <rect x="10" y="170" width="190" height="160" />
+      <circle cx="200" cy="250" r="60" />
+      <path d="M 10 40 A 237.5 237.5 0 0 1 10 460" />
+      <circle cx="52" cy="250" r="4" fill="#f97316" />
+      <rect x="740" y="170" width="190" height="160" />
+      <circle cx="740" cy="250" r="60" />
+      <path d="M 930 40 A 237.5 237.5 0 0 0 930 460" />
+      <circle cx="888" cy="250" r="4" fill="#f97316" />
+    </svg>
+
+    {/* Mobil — dikey saha (yukarıdan aşağı) */}
+    <svg
+      className="block sm:hidden absolute inset-0 w-full h-full opacity-[0.07]"
+      viewBox="0 0 500 940"
+      preserveAspectRatio="xMidYMid slice"
+      fill="none"
+      stroke="#f97316"
+      strokeWidth="2.5"
+    >
+      <rect x="10" y="10" width="480" height="920" />
+      <line x1="10" y1="470" x2="490" y2="470" />
+      <circle cx="250" cy="470" r="60" />
+      <circle cx="250" cy="470" r="20" />
+      <rect x="170" y="10" width="160" height="190" />
+      <circle cx="250" cy="200" r="60" />
+      <path d="M 40 10 A 237.5 237.5 0 0 0 460 10" />
+      <circle cx="250" cy="52" r="4" fill="#f97316" />
+      <rect x="170" y="740" width="160" height="190" />
+      <circle cx="250" cy="740" r="60" />
+      <path d="M 40 930 A 237.5 237.5 0 0 1 460 930" />
+      <circle cx="250" cy="888" r="4" fill="#f97316" />
+    </svg>
   </div>
 );
 
